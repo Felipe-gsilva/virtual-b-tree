@@ -27,7 +27,8 @@ page *new_page(u16 rrn, key keys[], u16 children[]) {
 void clear_page(page *page) {
     if(page) {
         free(page);
-        printf("successfully freed page");
+        if(DEBUG)
+            printf("@Successfully freed page");
         return;
     }
     printf("error while freeing page");

@@ -11,11 +11,11 @@ app* alloc_app() {
     appl->out = alloc_io_buf();
     appl->queue = alloc_queue();
     if (appl && appl->in && appl->out){
-        puts("@Allocated APP_BUFFER\n");
+        puts("@Allocated APP_BUFFER");
         return appl;
     }
         
-    puts("!!Error while allocating APP_BUFFER\n");
+    puts("!!Error while allocating APP_BUFFER");
     return NULL;
 }
 
@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
     file_name[13] = value;
     strcat(file_name, ".idx");
 
-    app->out->fp = create_data_file(file_name); //change to index file
+    app->out->fp = create_data_file(file_name); 
     if (app->out->fp == NULL) {
         printf("Failed to create b-tree\n");
         exit(0);

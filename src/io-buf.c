@@ -4,7 +4,8 @@ io_buf *alloc_io_buf(){
     io_buf *io = malloc(sizeof(io_buf));
     io->hr = malloc(sizeof(header_record));
     if(io) {
-        puts("@Allocated IO_BUFFER");
+        if(DEBUG)
+            puts("@Allocated IO_BUFFER");
         return io;
     }
     puts("!!Could not allocate IO_BUFFER");
@@ -12,6 +13,7 @@ io_buf *alloc_io_buf(){
 }
 
 void read_data_header(io_buf *io){
+    header_record hr;
     char hp_keyword[100]; 
     u16 hp_value;
     if (!io->fp){
@@ -19,20 +21,9 @@ void read_data_header(io_buf *io){
         return;
     }
 
-
-    // TODO 
-    //
-    // make this binary like
-    // fwrite
-    fscanf(io->fp, "%s", hp_keyword);
-    fscanf(io->fp, "%s %hu", hp_keyword, &hp_value);
-    io->hr->record_size = hp_value;
-    fscanf(io->fp, "%s %hu", hp_keyword, &hp_value);
-    io->hr->id_size = hp_value;
-    fscanf(io->fp, "%s %hu", hp_keyword, &hp_value);
-    io->hr->name_size = hp_value;
-    fscanf(io->fp, "%s", hp_keyword);
-    puts("@Header Record Loaded\n");
+    fread(&hr, sizeof(header_record),1,io->fp);
+    if(DEBUG) 
+        puts("@Header Record Loaded");
 }
 
 void write_data_header(FILE *fp, header_record *hr){
@@ -40,12 +31,14 @@ void write_data_header(FILE *fp, header_record *hr){
         printf("!NULL file\n");
         exit(-1);
     }
-
-    // TODO 
-    //
-    // make this binary like
-    // fwrite
-    fprintf(fp, "%s\nrecord_size %hu\nid_size %hu\nname_size %hu\n%s", SOHR, hr->record_size, hr->id_size, hr->name_size, EOHR);
+    
+    int flag = fwrite(&hr, sizeof(header_record), 1 ,fp);
+    if (flag) {
+        if(DEBUG)
+            puts("@Sucessfully written");
+        return;
+    }
+    puts("!!Error while writing on file");
 }
 
 void populate_header(header_record *hp) {
@@ -55,10 +48,9 @@ void populate_header(header_record *hp) {
             return; 
         }
     }
-
-    hp->record_size = 8 * (int)sizeof(header_record); 
-    hp->id_size = 8 * (int)sizeof(u16); 
-    hp->name_size = (int)sizeof(char) * 50; 
+    hp->record_size = RECORD_SIZE;
+    hp->id_size = sizeof(u16);
+    hp->name_size = MAX_ADDRESS;
 }
 
 void write_data(io_buf *io, int count, ...){
@@ -68,13 +60,8 @@ void write_data(io_buf *io, int count, ...){
     va_list args;
     va_start(args, count);
     for (int i = count; i >= 0; i = va_arg(args, int))
-        // TODO 
-        //
-        // make this binary like
-        // fwrite
         printf("%d ", i);
     va_end(args);
-    // TODO add the string writing
 }
 
 void load_file(io_buf *io, char *file_name) {
@@ -91,13 +78,13 @@ void load_file(io_buf *io, char *file_name) {
         return;
     }
 
-    io->fp = fopen(io->name, "r");
+    io->fp = fopen(io->name, "rb");
 
     if (io->fp == NULL) {
         printf("Error opening file %s ERROR: %d",io->name, -10);
         exit(1);
     }
-    
+
     read_data_header(io);
     puts("@File loaded");
 }
@@ -112,7 +99,7 @@ FILE *create_data_file(char *address) {
         return NULL;  
     }
 
-    fp = fopen(address, "w+");
+    fp = fopen(address, "wb+");
     if (fp == NULL) {
         fprintf(stderr, "!!Error opening file: %s\n", address);
         free(hp); 

@@ -3,10 +3,12 @@ add io_buf ops
     - delete
     - update
 
-page insert
-page remove
+- [  ] page insert
+- [  ] page remove
 
-bufferize b-tree
+- [  ] bufferize b-tree
+
+- [  ] queue
 
 ---
 API exports

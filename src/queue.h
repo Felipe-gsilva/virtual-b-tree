@@ -3,8 +3,6 @@
 
 #include "page.h"
 
-#define P 50
-
 typedef struct queue queue;
 
 struct queue {
@@ -12,7 +10,6 @@ struct queue {
     page *page;
     u8 counter;
 };
-
 
 queue *alloc_queue();
 

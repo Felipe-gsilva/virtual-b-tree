@@ -9,7 +9,8 @@ queue *alloc_queue() {
     root->next = NULL;
     root->page = NULL;
     root->counter = 0;
-    puts("@Allocated queue");
+    if(DEBUG)
+        puts("@Allocated queue");
     return root;
 }
 
@@ -27,9 +28,11 @@ void clear_queue(queue *queue) {
         free(current);
         current = next_node;
     }
-
+    if(current != NULL)
+        free(current);
     queue->next = NULL; 
-    puts("@Queue cleared");
+    if(DEBUG)
+        puts("@Queue cleared");
 }
 
 void print_queue(queue *queue) {
@@ -74,7 +77,8 @@ void push_page(queue *queue, page *page) {
     }
     temp->next = new_node;
     queue->counter++;
-    puts("@Pushed on queue");
+    if(DEBUG)
+        puts("@Pushed on queue");
 }
 
 page *pop_page(queue *queue) {
@@ -90,7 +94,8 @@ page *pop_page(queue *queue) {
 
     free(free_q);
     queue->counter--;
-    puts("@Popped from queue");
+    if(DEBUG)
+        puts("@Popped from queue");
     return page;
 }
 

@@ -2,8 +2,6 @@
 #define FILE_H
 
 #include "defines.h"
-#define SOHR "-------HEADER-------"
-#define EOHR "--------------------"
 
 typedef struct header_record header_record;
 typedef struct io_buf io_buf;
@@ -16,7 +14,7 @@ struct header_record {
 };
 
 struct io_buf {
-    char name[4096];
+    char name[MAX_ADDRESS];
     FILE *fp;
     header_record *hr;
 };
