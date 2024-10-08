@@ -6,8 +6,6 @@
 #define ORDER 4
 
 
-// armazenará no seu cabeçalho o RNN da raiz seguida das demais chaves.
-
 typedef struct key key;
 
 typedef struct page page;

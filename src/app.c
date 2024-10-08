@@ -10,11 +10,11 @@ app* alloc_app() {
     appl->in = alloc_io_buf();
     appl->out = alloc_io_buf();
     if (appl && appl->in && appl->out){
-        puts("@Allocated App Buffer\n");
+        puts("@Allocated APP_BUFFER\n");
         return appl;
     }
         
-    puts("!!Error while allocating App Buffer\n");
+    puts("!!Error while allocating APP_BUFFER\n");
     return NULL;
 }
 
@@ -40,14 +40,25 @@ int main(int argc, char **argv) {
     app = alloc_app();
 
     cli();
-    app->in->fp = create_data_file("public/data.ct");
-    if (app->in->fp == NULL) {
-        printf("Failed to create data file\n");
+
+    // test --------
+
+    //load_file(app->in, "public/data.ct");
+    // ------
+
+    char file_name[4096];
+    strcpy(file_name, "public/btree-");
+    char value;
+    value = ORDER+'0';
+    file_name[13] = value;
+    strcat(file_name, ".idx");
+
+    app->out->fp = create_tree_file(file_name);
+    if (app->out->fp == NULL) {
+        printf("Failed to create b-tree\n");
         exit(0);
     }
 
-    load_file(app->in, "public/data.ct");
-    
     clear_app(app);
     return 0;
 }

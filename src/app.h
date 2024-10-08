@@ -3,6 +3,7 @@
 
 #include "io-buf.h"
 #include "stack.h"
+#include "b-tree.h"
 
 typedef struct app app;
 

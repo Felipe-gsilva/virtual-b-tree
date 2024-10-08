@@ -19,6 +19,11 @@ void read_data_header(io_buf *io){
         return;
     }
 
+
+    // TODO 
+    //
+    // make this binary like
+    // fwrite
     fscanf(io->fp, "%s", hp_keyword);
     fscanf(io->fp, "%s %hu", hp_keyword, &hp_value);
     io->hr->record_size = hp_value;
@@ -35,6 +40,11 @@ void write_data_header(FILE *fp, header_record *hr){
         printf("!NULL file\n");
         exit(-1);
     }
+
+    // TODO 
+    //
+    // make this binary like
+    // fwrite
     fprintf(fp, "%s\nrecord_size %hu\nid_size %hu\nname_size %hu\n%s", SOHR, hr->record_size, hr->id_size, hr->name_size, EOHR);
 }
 
@@ -58,6 +68,10 @@ void write_data(io_buf *io, int count, ...){
     va_list args;
     va_start(args, count);
     for (int i = count; i >= 0; i = va_arg(args, int))
+        // TODO 
+        //
+        // make this binary like
+        // fwrite
         printf("%d ", i);
     va_end(args);
     // TODO add the string writing
@@ -127,6 +141,5 @@ void clear_io_buf(io_buf *io) {
         free(io);
         io = NULL;
     }
-
-    puts("@Buffer cleared\n");
+    puts("@Buffer cleared");
 }
