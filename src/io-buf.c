@@ -12,46 +12,83 @@ io_buf *alloc_io_buf(){
     return NULL;
 }
 
-void read_data_header(io_buf *io){
-    header_record hr;
-    char hp_keyword[100]; 
-    u16 hp_value;
+void read_data_header(io_buf *io) {
+    header_record hr[1];
+    if (!io->fp) {
+        puts("!!File not opened");
+        return;
+    }
+
+    size_t t = fread(hr, sizeof(header_record),1,io->fp);
+
+    if(t != 1) {
+        puts("!!Error while reading header record");
+        printf("t size: %zu\n", t);
+        return;
+    }
+
+    io->hr->record_size = hr->record_size;
+    io->hr->id_size = hr->id_size;
+    io->hr->name_size = hr->name_size;
+
+    if(DEBUG) {
+        puts("@Header Record Loaded");
+        printf("-->data_header: %hu %hu %hu\n", io->hr->record_size, io->hr->name_size, io->hr->id_size);
+    }
+}
+
+/* void read_data_register() {
+    data_register hr[1];
     if (!io->fp){
         puts("!!Could not read data header");
         return;
     }
 
-    fread(&hr, sizeof(header_record),1,io->fp);
-    if(DEBUG) 
-        puts("@Header Record Loaded");
-}
+    size_t t = fread(hr, sizeof(header_record),1,io->fp);
+    if(t != 1) {
+        puts("!!Error while reading header record");
+        return;
+    }
 
-void write_data_header(FILE *fp, header_record *hr){
-    if(!fp){
-        printf("!NULL file\n");
+    io->hr->record_size = hr->record_size;
+    io->hr->id_size = hr->id_size;
+    io->hr->name_size = hr->name_size;
+
+    if(DEBUG) {
+        puts("@Header Record Loaded");
+        printf("-->data_header: %hu %hu %hu\n", io->hr->record_size, io->hr->name_size, io->hr->id_size);
+    }
+}
+*/
+
+void write_data_header(FILE *fp, header_record *hr) {
+    if (!fp) {
+        puts("!!NULL file");
         exit(-1);
     }
     
-    int flag = fwrite(&hr, sizeof(header_record), 1 ,fp);
-    if (flag) {
-        if(DEBUG)
-            puts("@Sucessfully written");
+    if(!hr){
+        puts("!!NULL header");
         return;
     }
-    puts("!!Error while writing on file");
+
+    size_t flag = fwrite(hr, sizeof(header_record), 1, fp);
+    if (flag != 1) 
+        puts("!!Error while writing to file");
+    if (DEBUG)
+        puts("@Successfully written");
 }
 
 void populate_header(header_record *hp) {
     if (hp == NULL) {
-        hp = malloc(sizeof(header_record));
-        if (hp == NULL) {
-            return; 
-        }
+        puts("!!Header pointer is NULL, cannot populate");
+        return;
     }
-    hp->record_size = RECORD_SIZE;
-    hp->id_size = sizeof(u16);
-    hp->name_size = MAX_ADDRESS;
+    hp->record_size = (u16)RECORD_SIZE;
+    hp->id_size = (u16)sizeof(u16);
+    hp->name_size = (u16)MAX_ADDRESS;
 }
+
 
 void write_data(io_buf *io, int count, ...){
     if(!io || !io->fp || !io->hr) {
@@ -95,13 +132,13 @@ FILE *create_data_file(char *address) {
 
     hp = malloc(sizeof(header_record));
     if (hp == NULL) {
-        fprintf(stderr, "!!Memory allocation failed for header_record\n");
+        puts("!!Memory allocation failed for header_record");
         return NULL;  
     }
 
     fp = fopen(address, "wb+");
     if (fp == NULL) {
-        fprintf(stderr, "!!Error opening file: %s\n", address);
+        printf("!!Error opening file: %s", address);
         free(hp); 
         return NULL; 
     }

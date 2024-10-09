@@ -6,39 +6,46 @@
 #define ERROR -1
 #define NOT_FOUND 0
 #define FOUND 1
-
 #define PROMOTION 2
 #define NO_PROMOTION 3
-
 
 typedef struct b_tree b_tree;
 
 typedef struct b_tree_header b_tree_header;
 
-struct b_tree {
-    // TODO save b-tree root?
-    // armazenará no seu cabeçalho o RNN da raiz seguida das demais chaves.
-};
-
 struct b_tree_header {
     u16 root_rrn;
+    u16 page_size;
+};
+
+struct b_tree {
+    b_tree_header *bh;
+    io_buf *io;
 };
 
 
-page *create_new_tree(page *page);
+b_tree *create_new_tree();
 
-u16 search(u16 rrn, key key, u16 found_rrn, u16 found_pos);
+b_tree *alloc_tree_buf();
+
+void clear_tree_buf(b_tree *b);
 
 void driver();
 
-bool remove_page();
+u16 search(b_tree *b, u16 rrn, key key, u16 found_rrn, u16 found_pos, page *return_page);
 
-bool insert_page();
+bool remove_page(b_tree *b, page *page);
 
-bool split();
+bool insert_page(b_tree *b, page *page);
+
+page* split(page *page);
 
 bool promote();
 
 FILE *create_tree_file(char *file_name);
+
+page *load_page(b_tree *b, u16 rrn);
+
+u16 search_key(page *page, key key);
 
 #endif

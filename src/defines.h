@@ -10,17 +10,6 @@
 
 #define DEBUG 1
 
-// in bytes
-#define MAX_ADDRESS 4096 
-#define RECORD_SIZE 50 
-
-// size data register 
-#define TAMANHO_PLACA 8
-#define TAMANHO_MODELO 20
-#define TAMANHO_MARCA 20
-#define TAMANHO_CATEGORIA 15
-#define TAMANHO_STATUS 16
-
 
 typedef uint8_t  u8; 
 typedef uint16_t u16;  

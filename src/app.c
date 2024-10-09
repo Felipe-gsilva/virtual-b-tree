@@ -10,6 +10,7 @@ app* alloc_app() {
     appl->in = alloc_io_buf();
     appl->out = alloc_io_buf();
     appl->queue = alloc_queue();
+    appl->b = alloc_tree_buf();
     if (appl && appl->in && appl->out){
         puts("@Allocated APP_BUFFER");
         return appl;
@@ -31,6 +32,10 @@ void clear_app(app* app) {
     if(app->queue){
         clear_queue(app->queue);
         app->queue =NULL;
+    }
+    if(app->b) {
+        clear_tree_buf(app->b);
+        app->b = NULL;
     }
     if(app) {
         free(app);
@@ -60,21 +65,9 @@ int main(int argc, char **argv) {
     }
 
 
+    // -- test on queue
     key keys[ORDER-1];
-    keys[0].key = 2;
-    
     push_page(app->queue, new_page(0,keys,0));
-    push_page(app->queue, new_page(1,0,0));
-    push_page(app->queue, new_page(2,0,0));
-    push_page(app->queue, new_page(3,0,0));
-    push_page(app->queue, new_page(4,0,0));
-    push_page(app->queue, new_page(5,0,0));
-    push_page(app->queue, new_page(6,0,0));
-    push_page(app->queue, new_page(5,0,0));
-    push_page(app->queue, new_page(5,0,0));
-    push_page(app->queue, new_page(5,0,0));
-    push_page(app->queue, new_page(5,0,0));
-    push_page(app->queue, new_page(5,0,0));
 
     printf("counter: %hu\n", app->queue->counter);
     print_queue(app->queue);
@@ -84,6 +77,9 @@ int main(int argc, char **argv) {
 
     push_page(app->queue, new_page(1,0,0));
     print_queue(app->queue);
+    // ---------
+    
+    load_file(app->in, file_name);
 
     clear_app(app);
     return 0;

@@ -1,3 +1,5 @@
+BUGS: not being able to read and retrieve data from fwrite
+
 add io_buf ops
     - insert 
     - delete
