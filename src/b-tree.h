@@ -12,10 +12,18 @@
 
 
 typedef struct b_tree b_tree;
+
+typedef struct b_tree_header b_tree_header;
+
 struct b_tree {
     // TODO save b-tree root?
     // armazenará no seu cabeçalho o RNN da raiz seguida das demais chaves.
 };
+
+struct b_tree_header {
+    u16 root_rrn;
+};
+
 
 page *create_new_tree(page *page);
 

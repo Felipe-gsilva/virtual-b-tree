@@ -70,11 +70,20 @@ int main(int argc, char **argv) {
     push_page(app->queue, new_page(4,0,0));
     push_page(app->queue, new_page(5,0,0));
     push_page(app->queue, new_page(6,0,0));
+    push_page(app->queue, new_page(5,0,0));
+    push_page(app->queue, new_page(5,0,0));
+    push_page(app->queue, new_page(5,0,0));
+    push_page(app->queue, new_page(5,0,0));
+    push_page(app->queue, new_page(5,0,0));
 
     printf("counter: %hu\n", app->queue->counter);
     print_queue(app->queue);
     
     clear_queue(app->queue);
+    print_queue(app->queue);
+
+    push_page(app->queue, new_page(1,0,0));
+    print_queue(app->queue);
 
     clear_app(app);
     return 0;

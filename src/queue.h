@@ -3,6 +3,9 @@
 
 #include "page.h"
 
+// queue max
+#define P 20
+
 typedef struct queue queue;
 
 struct queue {

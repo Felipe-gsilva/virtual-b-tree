@@ -2,9 +2,7 @@
 #define _PAGE_H
 
 #include "io-buf.h"
-
 #define ORDER 4
-
 
 typedef struct key key;
 

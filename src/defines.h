@@ -21,8 +21,6 @@
 #define TAMANHO_CATEGORIA 15
 #define TAMANHO_STATUS 16
 
-// queue max
-#define P 50
 
 typedef uint8_t  u8; 
 typedef uint16_t u16;  
