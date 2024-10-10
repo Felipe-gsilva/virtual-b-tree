@@ -67,17 +67,18 @@ void push_page(queue *queue, page *page) {
         return;
     }
 
-    if(queue->counter == P) 
+    if(queue->counter >= P) 
         pop_page(queue);
+
     new_node->page = page;
     new_node->next = NULL;
-
     struct queue *temp = queue;
     while (temp->next != NULL) {
         temp = temp->next;
     }
     temp->next = new_node;
     queue->counter++;
+
     if(DEBUG)
         puts("@Pushed on queue");
 }
@@ -100,3 +101,21 @@ page *pop_page(queue *queue) {
     return page;
 }
 
+page *queue_search(queue *queue, u16 rrn) {
+    if(!queue || !queue->next) {
+        puts("!!Error: NULL or Empty queue pointer");
+        return NULL;
+    }
+    struct queue *temp = queue;
+    while (temp->next != NULL && temp->page->rrn != rrn) {
+        temp = temp->next;
+    }
+
+    if(temp) {
+        if(DEBUG)
+            puts("@Found on queue");
+        return temp->page;
+    }
+    puts("!!Error: page not found on queue");
+    return NULL;
+}

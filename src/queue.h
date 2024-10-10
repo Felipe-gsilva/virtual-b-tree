@@ -24,4 +24,6 @@ void push_page(queue *queue, page *page);
 
 page *pop_page(queue *queue);
 
+page *queue_search(queue *queue, u16 rrn);
+
 #endif

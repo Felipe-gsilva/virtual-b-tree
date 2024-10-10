@@ -2,6 +2,7 @@
 #define _btree
 
 #include "page.h"
+#include "queue.h"
 
 #define ERROR -1
 #define NOT_FOUND 0
@@ -21,6 +22,7 @@ struct b_tree_header {
 struct b_tree {
     b_tree_header *bh;
     io_buf *io;
+    queue *q;
 };
 
 

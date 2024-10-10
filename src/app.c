@@ -58,25 +58,24 @@ int main(int argc, char **argv) {
     file_name[13] = value;
     strcat(file_name, ".idx");
 
-    app->out->fp = create_data_file(file_name); 
+    create_data_file(app->out, file_name);
     if (app->out->fp == NULL) {
         printf("Failed to create b-tree\n");
         exit(0);
     }
 
-
     // -- test on queue
-    key keys[ORDER-1];
-    push_page(app->queue, new_page(0,keys,0));
-
-    printf("counter: %hu\n", app->queue->counter);
-    print_queue(app->queue);
-    
-    clear_queue(app->queue);
-    print_queue(app->queue);
-
-    push_page(app->queue, new_page(1,0,0));
-    print_queue(app->queue);
+    //    key keys[ORDER-1];
+    //    push_page(app->queue, new_page(0,keys,0));
+    //
+    //    printf("counter: %hu\n", app->queue->counter);
+    //    print_queue(app->queue);
+    //    
+    //    clear_queue(app->queue);
+    //    print_queue(app->queue);
+    //
+    //    push_page(app->queue, new_page(1,0,0));
+    //    print_queue(app->queue);
     // ---------
     
     load_file(app->in, file_name);

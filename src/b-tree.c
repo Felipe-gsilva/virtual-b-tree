@@ -4,6 +4,7 @@ b_tree *alloc_tree_buf() {
     b_tree *b = malloc(sizeof(b_tree));
     b->bh = malloc(sizeof(b_tree_header));
     b->io = alloc_io_buf();
+    b->q = alloc_queue();
     if(b) {
         if(DEBUG)
             puts("@Allocated B_TREE_BUFFER");
@@ -16,6 +17,7 @@ b_tree *alloc_tree_buf() {
 void clear_tree_buf(b_tree *b) {
     if(b) {
         clear_io_buf(b->io);
+        clear_queue(b->q);
         if(b->bh){
             free(b->bh);
             b->bh = NULL;
@@ -40,6 +42,10 @@ page *load_page(b_tree *b, u16 rrn) {
         puts("!!Error while loading page");
         return NULL;
     }
+    
+    // if is loaded on queue, just grab it from there
+    //  
+
     int byte_offset = rrn * b->bh->page_size + sizeof(b_tree_header);
     fseek(b->io->fp, byte_offset, SEEK_SET);
 

@@ -19,30 +19,31 @@ typedef struct io_buf io_buf;
 typedef struct data_register data_register;
 
 struct data_register {
+    // Placa do Veículo (string) - Chave Primária
     char placa[TAMANHO_PLACA];
+    // Modelo (string)
     char modelo[TAMANHO_MODELO];
+    // Marca (string)
     char marca[TAMANHO_MARCA];
+    // Ano (inteiro)
     int ano;
+    // Categoria (string) (ex: econômico, luxo, SUV)
     char categoria[TAMANHO_CATEGORIA];
+    // Quilometragem (inteiro)
     int quilometragem;
+    // Status de Disponibilidade (string) (disponível, alugado, em manutenção)
     char status[TAMANHO_STATUS];
-// Placa do Veículo (string) - Chave Primária
-// Modelo (string)
-// Marca (string)
-// Ano (inteiro)
-// Categoria (string) (ex: econômico, luxo, SUV)
-// Quilometragem (inteiro)
-// Status de Disponibilidade (string) (disponível, alugado, em manutenção)
-
 };
+
 struct header_record {
     u16 record_size;
     u16 id_size;
     u16 name_size;
 };
 
+
 struct io_buf {
-    char name[MAX_ADDRESS];
+    char address[MAX_ADDRESS];
     FILE *fp;
     header_record *hr;
 };
@@ -51,13 +52,13 @@ io_buf *alloc_io_buf();
 
 void load_file(io_buf *io, char *file_name);
 
-FILE *create_data_file(char *address);
+void create_data_file(io_buf *io, char *file_name);
 
 void read_data_header(io_buf *io);
 
 void populate_header(header_record *hp);
 
-void write_data_header(FILE *fp, header_record *hp);
+void write_data_header(io_buf *io);
 
 void write_data(io_buf *io, int count, ...);
 

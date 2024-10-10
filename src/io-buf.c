@@ -13,20 +13,24 @@ io_buf *alloc_io_buf(){
 }
 
 void read_data_header(io_buf *io) {
-    header_record hr[1];
     if (!io->fp) {
         puts("!!File not opened");
         return;
     }
 
-    size_t t = fread(hr, sizeof(header_record),1,io->fp);
+    header_record *hr;
+    fseek(io->fp, 0, SEEK_SET);
+
+    hr = malloc(sizeof(header_record));
+    int t = fread(hr, sizeof(header_record),1 ,io->fp);
 
     if(t != 1) {
         puts("!!Error while reading header record");
-        printf("t size: %zu\n", t);
+        printf("t size: %d\n", t);
+        printf("Read sizes: %hu %hu %hu\n", hr->record_size, hr->id_size, hr->name_size);
         return;
     }
-
+    
     io->hr->record_size = hr->record_size;
     io->hr->id_size = hr->id_size;
     io->hr->name_size = hr->name_size;
@@ -34,7 +38,9 @@ void read_data_header(io_buf *io) {
     if(DEBUG) {
         puts("@Header Record Loaded");
         printf("-->data_header: %hu %hu %hu\n", io->hr->record_size, io->hr->name_size, io->hr->id_size);
+        printf("Read sizes: %hu %hu %hu\n", hr->record_size, hr->id_size, hr->name_size);
     }
+    free(hr);
 }
 
 /* void read_data_register() {
@@ -61,20 +67,24 @@ void read_data_header(io_buf *io) {
 }
 */
 
-void write_data_header(FILE *fp, header_record *hr) {
-    if (!fp) {
+void write_data_header(io_buf *io) {
+    if (!io->fp) {
         puts("!!NULL file");
         exit(-1);
     }
     
-    if(!hr){
+    if(!io->hr){
         puts("!!NULL header");
         return;
     }
 
-    size_t flag = fwrite(hr, sizeof(header_record), 1, fp);
-    if (flag != 1) 
+    fseek(io->fp, 0, SEEK_SET);
+    size_t flag = fwrite(io->hr, sizeof(header_record), 1, io->fp);
+
+    if (flag != 1) {
         puts("!!Error while writing to file");
+        return;   
+    }
     if (DEBUG)
         puts("@Successfully written");
 }
@@ -107,7 +117,7 @@ void load_file(io_buf *io, char *file_name) {
         fclose(io->fp);
     }
 
-    strcpy(io->name, file_name);
+    strcpy(io->address, file_name);
     printf("@Loading file: %s\n", file_name);
 
     if(!file_name) {
@@ -115,10 +125,10 @@ void load_file(io_buf *io, char *file_name) {
         return;
     }
 
-    io->fp = fopen(io->name, "rb");
+    io->fp = fopen(io->address, "rb");
 
     if (io->fp == NULL) {
-        printf("Error opening file %s ERROR: %d",io->name, -10);
+        printf("Error opening file %s ERROR: %d",io->address, -10);
         exit(1);
     }
 
@@ -126,28 +136,24 @@ void load_file(io_buf *io, char *file_name) {
     puts("@File loaded");
 }
 
-FILE *create_data_file(char *address) {
-    FILE *fp;
-    header_record *hp;
-
-    hp = malloc(sizeof(header_record));
-    if (hp == NULL) {
+void create_data_file(io_buf *io, char *file_name) {
+    strcpy(io->address, file_name);
+    if (io->hr == NULL) {
         puts("!!Memory allocation failed for header_record");
-        return NULL;  
+        return;  
     }
 
-    fp = fopen(address, "wb+");
-    if (fp == NULL) {
-        printf("!!Error opening file: %s", address);
-        free(hp); 
-        return NULL; 
+    if(io->fp != NULL)
+        exit(-1);
+
+    io->fp = fopen(io->address, "wb+");
+    if (!io->fp) {
+        printf("!!Error opening file: %s", io->address);
+        return; 
     }
 
-    populate_header(hp);
-    write_data_header(fp, hp);
-
-    free(hp);  
-    return fp;
+    populate_header(io->hr);
+    write_data_header(io);
 }
 
 void clear_io_buf(io_buf *io) {
