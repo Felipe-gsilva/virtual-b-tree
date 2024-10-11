@@ -20,11 +20,11 @@ void read_data_header(io_buf *io) {
 
     header_record *hr;
     fseek(io->fp, 0, SEEK_SET);
-
     hr = malloc(sizeof(header_record));
-    int t = fread(hr, sizeof(header_record),1 ,io->fp);
+    int t;
+    t = fread(hr, sizeof(header_record), 1, io->fp);
 
-    if(t != 1) {
+    if (t != 1) {
         puts("!!Error while reading header record");
         printf("t size: %d\n", t);
         printf("Read sizes: %hu %hu %hu\n", hr->record_size, hr->id_size, hr->name_size);
@@ -38,53 +38,77 @@ void read_data_header(io_buf *io) {
     if(DEBUG) {
         puts("@Header Record Loaded");
         printf("-->data_header: %hu %hu %hu\n", io->hr->record_size, io->hr->name_size, io->hr->id_size);
-        printf("Read sizes: %hu %hu %hu\n", hr->record_size, hr->id_size, hr->name_size);
     }
-    free(hr);
 }
 
-/* void read_data_register() {
-    data_register hr[1];
+void read_data_register(io_buf *io, u16 rrn) {
+    data_register *hr;
+    hr = malloc(sizeof(data_register));
     if (!io->fp){
-        puts("!!Could not read data header");
-        return;
+        puts("!!Error: wrong file pointer");
+        exit(-1);
     }
+    
+    int byte_offset = sizeof(header_record) + (io->hr->record_size * rrn);
+    printf("byteoffset: %d\n", byte_offset);
+    fseek(io->fp, byte_offset, SEEK_SET);
+    size_t t = fread(hr, sizeof(data_register),1 ,io->fp);
 
-    size_t t = fread(hr, sizeof(header_record),1,io->fp);
     if(t != 1) {
         puts("!!Error while reading header record");
         return;
     }
 
-    io->hr->record_size = hr->record_size;
-    io->hr->id_size = hr->id_size;
-    io->hr->name_size = hr->name_size;
+    printf("Registro de RNN 0\n");
+    printf("Placa: %s\n", hr->placa);
+    printf("Modelo: %s\n", hr->modelo);
+    printf("Marca: %s\n", hr->marca);
+    printf("Ano: %d\n", hr->ano);
+    printf("Categoria: %s\n", hr->categoria);
+    printf("Quilometragem: %d\n", hr->quilometragem);
+    printf("Status: %s\n", hr->status);
+    printf("---------------------------\n");
 
     if(DEBUG) {
         puts("@Header Record Loaded");
-        printf("-->data_header: %hu %hu %hu\n", io->hr->record_size, io->hr->name_size, io->hr->id_size);
+        printf("-->data_record: %hu %hu %hu\n", io->hr->record_size, io->hr->name_size, io->hr->id_size);
     }
 }
-*/
 
 void write_data_header(io_buf *io) {
     if (!io->fp) {
         puts("!!NULL file");
         exit(-1);
     }
-    
-    if(!io->hr){
-        puts("!!NULL header");
+
+    printf("%hu %hu %hu\n", io->hr->record_size, io->hr->name_size , io->hr->id_size );
+    if(io->hr->record_size == 0 ||io->hr->name_size == 0 ||io->hr->id_size == 0) {
+        puts("!!Error: one or more input on header_record are 0");
         return;
+    }
+    
+    if (io->hr == NULL) {
+        io->hr = malloc(sizeof(header_record));
+        if (io->hr == NULL) {
+            puts("!!Memory allocation error");
+            return;
+        }
     }
 
     fseek(io->fp, 0, SEEK_SET);
-    size_t flag = fwrite(io->hr, sizeof(header_record), 1, io->fp);
+    int flag;
+    flag = fwrite(io->hr, sizeof(header_record), 1 ,io->fp);
 
-    if (flag != 1) {
+     if (flag != 1){
         puts("!!Error while writing to file");
-        return;   
+        if(DEBUG) {
+            printf("Flag: %d\n", flag);
+            printf("Sizes: %hu %hu %hu\n", io->hr->record_size, io->hr->id_size, io->hr->name_size);
+            clearerr(io->fp);
+        }
+        return;
     }
+
     if (DEBUG)
         puts("@Successfully written");
 }
@@ -94,13 +118,14 @@ void populate_header(header_record *hp) {
         puts("!!Header pointer is NULL, cannot populate");
         return;
     }
-    hp->record_size = (u16)RECORD_SIZE;
-    hp->id_size = (u16)sizeof(u16);
-    hp->name_size = (u16)MAX_ADDRESS;
+
+    hp->record_size = RECORD_SIZE;
+    hp->id_size = sizeof(int);
+    hp->name_size = MAX_ADDRESS;
 }
 
 
-void write_data(io_buf *io, int count, ...){
+void write_data_record(io_buf *io, int count, ...){
     if(!io || !io->fp || !io->hr) {
         printf("!!NULL io_buf\n");
     }
@@ -112,27 +137,34 @@ void write_data(io_buf *io, int count, ...){
 }
 
 void load_file(io_buf *io, char *file_name) {
-    if(io->fp != NULL) {
-        puts("--> buffer already filled\n--> closing logical link\n");
-        fclose(io->fp);
-    }
-
-    strcpy(io->address, file_name);
-    printf("@Loading file: %s\n", file_name);
-
-    if(!file_name) {
+    if (!file_name) {
         puts("!!ERROR: no file");
         return;
     }
 
-    io->fp = fopen(io->address, "rb");
+    if (io->fp != NULL) {
+        puts("--> buffer already filled\n--> closing logical link\n");
+        if (fclose(io->fp) != 0) {
+            puts("!!ERROR: failed to close file");
+            return;
+        }
+    }
 
+    strncpy(io->address, file_name, sizeof(io->address) - 1);
+    io->address[sizeof(io->address) - 1] = '\0'; 
+    printf("@Loading file: %s\n", file_name);
+
+    io->fp = fopen(io->address, "rb");
     if (io->fp == NULL) {
-        printf("Error opening file %s ERROR: %d",io->address, -10);
-        exit(1);
+        perror("Error opening file");
+        return;
     }
 
     read_data_header(io);
+    if(io->hr->record_size == 0 ||io->hr->name_size == 0 ||io->hr->id_size == 0) {
+        puts("!!Error: one or more input on header_record are 0");
+        return;
+    }
     puts("@File loaded");
 }
 
@@ -146,14 +178,19 @@ void create_data_file(io_buf *io, char *file_name) {
     if(io->fp != NULL)
         exit(-1);
 
-    io->fp = fopen(io->address, "wb+");
+    io->fp = fopen(io->address, "r+b");
     if (!io->fp) {
         printf("!!Error opening file: %s", io->address);
         return; 
     }
 
     populate_header(io->hr);
-    write_data_header(io);
+    if(io->hr != NULL) {
+        write_data_header(io);
+        return;
+    }
+
+    puts("!!Error could craete data file");
 }
 
 void clear_io_buf(io_buf *io) {

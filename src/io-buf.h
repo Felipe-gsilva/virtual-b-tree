@@ -14,6 +14,10 @@
 #define TAMANHO_CATEGORIA 15
 #define TAMANHO_STATUS 16
 
+#define DISPONIVEL 'disponivel'
+#define ALUGADO 'alugado'
+#define MANUTENCAO 'em manutencao'
+
 typedef struct header_record header_record;
 typedef struct io_buf io_buf;
 typedef struct data_register data_register;
@@ -56,11 +60,13 @@ void create_data_file(io_buf *io, char *file_name);
 
 void read_data_header(io_buf *io);
 
+void read_data_register(io_buf *io, u16 rrn);
+
 void populate_header(header_record *hp);
 
 void write_data_header(io_buf *io);
 
-void write_data(io_buf *io, int count, ...);
+void write_data_record(io_buf *io, int count, ...);
 
 void clear_io_buf(io_buf *io_buf);
 

@@ -12,7 +12,8 @@ app* alloc_app() {
     appl->queue = alloc_queue();
     appl->b = alloc_tree_buf();
     if (appl && appl->in && appl->out){
-        puts("@Allocated APP_BUFFER");
+        if(DEBUG)
+            puts("@Allocated APP_BUFFER");
         return appl;
     }
         
@@ -51,14 +52,14 @@ int main(int argc, char **argv) {
 
     cli();
 
-    char file_name[4096];
-    strcpy(file_name, "public/btree-");
+    char index_file[4096];
+    strcpy(index_file, "public/btree-");
     char value;
     value = ORDER+'0';
-    file_name[13] = value;
-    strcat(file_name, ".idx");
+    index_file[13] = value;
+    strcat(index_file, ".idx");
 
-    create_data_file(app->out, file_name);
+    create_data_file(app->out, index_file);
     if (app->out->fp == NULL) {
         printf("Failed to create b-tree\n");
         exit(0);
@@ -78,7 +79,13 @@ int main(int argc, char **argv) {
     //    print_queue(app->queue);
     // ---------
     
-    load_file(app->in, file_name);
+    load_file(app->in, index_file);
+
+
+    char data_file[MAX_ADDRESS];
+    strcpy(data_file, "public/veiculos.dat");
+    load_file(app->out, data_file);
+    read_data_register(app->out, 0);
 
     clear_app(app);
     return 0;
