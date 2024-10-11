@@ -1,4 +1,5 @@
 #include "io-buf.h"
+#include "b-tree.h"
 
 io_buf *alloc_io_buf(){
     io_buf *io = malloc(sizeof(io_buf));
@@ -197,6 +198,7 @@ void load_file(io_buf *io, char *file_name) {
     puts("@File loaded");
 }
 
+
 void create_data_file(io_buf *io, char *file_name) {
     strcpy(io->address, file_name);
     if (io->hr == NULL) {
@@ -204,7 +206,7 @@ void create_data_file(io_buf *io, char *file_name) {
         return;  
     }
 
-    if(io->fp != NULL)
+    if(io->fp != NULL || !io)
         exit(-1);
 
     io->fp = fopen(io->address, "r+b");

@@ -52,4 +52,8 @@ page *load_page(b_tree *b, u16 rrn);
 
 void print_register(b_tree_header *bp, u16 rrn);
 
+void populate_tree_header(b_tree_header *bh);
+
+void create_index_file(io_buf *io, char *file_name, b_tree_header *b);
+
 #endif

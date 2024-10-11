@@ -2,7 +2,7 @@
 #define FILE_H
 
 #include "defines.h"
-//
+
 // in bytes
 #define MAX_ADDRESS 4096 
 #define RECORD_SIZE 88 
@@ -60,6 +60,7 @@ void print_data_register(data_register *hr);
 void load_file(io_buf *io, char *file_name);
 
 void create_data_file(io_buf *io, char *file_name);
+
 
 void read_data_header(io_buf *io);
 

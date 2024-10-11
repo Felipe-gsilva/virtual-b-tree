@@ -54,8 +54,12 @@ int main(int argc, char **argv) {
     index_file[13] = value;
     strcat(index_file, ".idx");
 
-    // create_index_file(app->in, index_file);
-    create_data_file(app->out, index_file);
+    char data_file[MAX_ADDRESS];
+    strcpy(data_file, "public/veiculos.dat");
+
+    b_tree_header *bh;
+    create_index_file(app->in, index_file, bh);
+    create_data_file(app->out, data_file);
 
     if (app->out->fp == NULL) {
         printf("Failed to create b-tree\n");
@@ -74,15 +78,13 @@ int main(int argc, char **argv) {
     //
     //    push_page(app->queue, new_page(1,0,0));
     //    print_queue(app->queue);
-    // ---------
+    // --------- REMOVE when done loading and unloading pages
     
     load_file(app->in, index_file);
-    load_file(app->out, "public/veiculos.dat");
-
+    load_file(app->out, data_file);
+    
     data_register *hr;
-    for(int i = 0; i < 100; i++) 
-        hr = read_data_register(app->out, i);
-
+    key key;
 
 
     clear_app(app);

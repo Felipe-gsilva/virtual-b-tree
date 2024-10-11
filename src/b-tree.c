@@ -130,3 +130,27 @@ FILE *create_tree_file(char *file_name) {
 void print_register(b_tree_header *bp, u16 rrn) {
     
 }
+
+
+void create_index_file(io_buf *io, char *file_name, b_tree_header *b) {
+    strcpy(io->address, file_name);
+    if (io->hr == NULL) {
+        puts("!!Memory allocation failed for data_header_record");
+        return;  
+    }
+
+    if(io->fp != NULL || !io)
+        exit(-1);
+
+    io->fp = fopen(io->address, "r+b");
+    if (!io->fp) {
+        printf("!!Error opening file: %s", io->address);
+        return; 
+    }
+
+    populate_tree_header(b);
+    if(io->hr != NULL) {
+        write_data_header(io);
+        return;
+    }
+}
