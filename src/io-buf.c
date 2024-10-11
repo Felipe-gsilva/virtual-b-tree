@@ -2,7 +2,7 @@
 
 io_buf *alloc_io_buf(){
     io_buf *io = malloc(sizeof(io_buf));
-    io->hr = malloc(sizeof(header_record));
+    io->hr = malloc(sizeof(data_header_record));
     if(io) {
         if(DEBUG)
             puts("@Allocated IO_BUFFER");
@@ -18,11 +18,11 @@ void read_data_header(io_buf *io) {
         return;
     }
 
-    header_record *hr;
+    data_header_record *hr;
     fseek(io->fp, 0, SEEK_SET);
-    hr = malloc(sizeof(header_record));
+    hr = malloc(sizeof(data_header_record));
     int t;
-    t = fread(hr, sizeof(header_record), 1, io->fp);
+    t = fread(hr, sizeof(data_header_record), 1, io->fp);
 
     if (t != 1) {
         puts("!!Error while reading header record");
@@ -37,28 +37,10 @@ void read_data_header(io_buf *io) {
 
     if(DEBUG) {
         puts("@Header Record Loaded");
-        printf("-->data_header: %hu %hu %hu\n", io->hr->record_size, io->hr->name_size, io->hr->id_size);
+        printf("-->data_header: record_size: %hu name_size: %hu id_size: %hu free_rrn: %hu\n", io->hr->record_size, io->hr->name_size, io->hr->id_size, io->hr->free_rrn);
     }
 }
-
-void read_data_register(io_buf *io, u16 rrn) {
-    data_register *hr;
-    hr = malloc(sizeof(data_register));
-    if (!io->fp){
-        puts("!!Error: wrong file pointer");
-        exit(-1);
-    }
-    
-    int byte_offset = sizeof(header_record) + (io->hr->record_size * rrn);
-    printf("byteoffset: %d\n", byte_offset);
-    fseek(io->fp, byte_offset, SEEK_SET);
-    size_t t = fread(hr, sizeof(data_register),1 ,io->fp);
-
-    if(t != 1) {
-        puts("!!Error while reading header record");
-        return;
-    }
-
+void print_data_register(data_register *hr) {
     printf("Registro de RNN 0\n");
     printf("Placa: %s\n", hr->placa);
     printf("Modelo: %s\n", hr->modelo);
@@ -68,11 +50,58 @@ void read_data_register(io_buf *io, u16 rrn) {
     printf("Quilometragem: %d\n", hr->quilometragem);
     printf("Status: %s\n", hr->status);
     printf("---------------------------\n");
+}
 
-    if(DEBUG) {
-        puts("@Header Record Loaded");
-        printf("-->data_record: %hu %hu %hu\n", io->hr->record_size, io->hr->name_size, io->hr->id_size);
+data_register *read_data_register(io_buf *io, u16 rrn) {
+    data_register *hr;
+    hr = malloc(sizeof(data_register));
+    if (!io->fp){
+        puts("!!Error: wrong file pointer");
+        exit(-1);
     }
+    
+    int byte_offset = sizeof(data_header_record) + (io->hr->record_size * rrn);
+    printf("byteoffset: %d\n", byte_offset);
+    fseek(io->fp, byte_offset, SEEK_SET);
+    size_t t = fread(hr, sizeof(data_register),1 ,io->fp);
+
+    if(t != 1) {
+        puts("!!Error while reading header record");
+        return NULL;
+    }
+
+    if(DEBUG)
+        print_data_register(hr);
+
+    if(DEBUG)
+        puts("@Header Record Loaded");
+    return hr;
+}
+
+void write_data_register(io_buf *io, u16 rrn, data_register *d){
+    if(!io) {
+        puts("!!NULL io_buffer");
+        exit(-1);
+    }
+    if (!io->fp) {
+        puts("!!NULL file");
+        exit(-1);
+    }
+    if(!d) {
+        puts("!!NULL data register");
+        exit(-1);
+    }
+
+    int byte_offset = sizeof(data_header_record) + (io->hr->record_size * rrn);
+    printf("byteoffset: %d\n", byte_offset);
+    fseek(io->fp, byte_offset, SEEK_SET);
+    size_t t = fwrite(d, sizeof(data_register),1 ,io->fp);
+
+    if(t != 1) {
+        puts("!!Error while writing header record");
+        return;
+    }
+
 }
 
 void write_data_header(io_buf *io) {
@@ -81,14 +110,13 @@ void write_data_header(io_buf *io) {
         exit(-1);
     }
 
-    printf("%hu %hu %hu\n", io->hr->record_size, io->hr->name_size , io->hr->id_size );
-    if(io->hr->record_size == 0 ||io->hr->name_size == 0 ||io->hr->id_size == 0) {
-        puts("!!Error: one or more input on header_record are 0");
+    if(io->hr->record_size == 0 || io->hr->name_size == 0 ||io->hr->id_size == 0) {
+        puts("!!Error: one or more input on data_header_record are 0");
         return;
     }
     
     if (io->hr == NULL) {
-        io->hr = malloc(sizeof(header_record));
+        io->hr = malloc(sizeof(data_header_record));
         if (io->hr == NULL) {
             puts("!!Memory allocation error");
             return;
@@ -97,13 +125,13 @@ void write_data_header(io_buf *io) {
 
     fseek(io->fp, 0, SEEK_SET);
     int flag;
-    flag = fwrite(io->hr, sizeof(header_record), 1 ,io->fp);
+    flag = fwrite(io->hr, sizeof(data_header_record), 1 ,io->fp);
 
      if (flag != 1){
         puts("!!Error while writing to file");
         if(DEBUG) {
             printf("Flag: %d\n", flag);
-            printf("Sizes: %hu %hu %hu\n", io->hr->record_size, io->hr->id_size, io->hr->name_size);
+            printf("Header: %hu %hu %hu %hu\n", io->hr->record_size, io->hr->id_size, io->hr->name_size, io->hr->free_rrn);
             clearerr(io->fp);
         }
         return;
@@ -113,7 +141,7 @@ void write_data_header(io_buf *io) {
         puts("@Successfully written");
 }
 
-void populate_header(header_record *hp) {
+void populate_header(data_header_record *hp) {
     if (hp == NULL) {
         puts("!!Header pointer is NULL, cannot populate");
         return;
@@ -122,6 +150,7 @@ void populate_header(header_record *hp) {
     hp->record_size = RECORD_SIZE;
     hp->id_size = sizeof(int);
     hp->name_size = MAX_ADDRESS;
+    hp->free_rrn = 999;
 }
 
 
@@ -162,7 +191,7 @@ void load_file(io_buf *io, char *file_name) {
 
     read_data_header(io);
     if(io->hr->record_size == 0 ||io->hr->name_size == 0 ||io->hr->id_size == 0) {
-        puts("!!Error: one or more input on header_record are 0");
+        puts("!!Error: one or more input on data_header_record are 0");
         return;
     }
     puts("@File loaded");
@@ -171,7 +200,7 @@ void load_file(io_buf *io, char *file_name) {
 void create_data_file(io_buf *io, char *file_name) {
     strcpy(io->address, file_name);
     if (io->hr == NULL) {
-        puts("!!Memory allocation failed for header_record");
+        puts("!!Memory allocation failed for data_header_record");
         return;  
     }
 

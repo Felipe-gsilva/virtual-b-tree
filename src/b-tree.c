@@ -29,12 +29,34 @@ void clear_tree_buf(b_tree *b) {
         puts("@B_TREE_BUFFER cleared");
 }
 
-b_tree *create_new_tree() {
+void populate_tree_header(b_tree_header *bh) {
+    if (bh == NULL) {
+        puts("!!Header pointer is NULL, cannot populate");
+        return;
+    }
+
+    bh->page_size = sizeof(page);
+    bh->root_rrn = 0;
+}
+
+b_tree *create_new_tree(io_buf *io) {
+    
+
     return NULL;
 }
 
-u16 search_key(page *page, key key) {
-    return 0;
+u16 search_key(page *page, key key, int *return_pos) {
+    if(!page)
+        return ERROR;
+
+    for(int i = 0; i < ORDER-1; i++) {
+        if(page->keys[i].key == key.key) {
+            *return_pos = i;
+            return FOUND;
+        }
+    }
+    *return_pos = NOT_FOUND;
+    return NOT_FOUND;
 }
 
 page *load_page(b_tree *b, u16 rrn) {
@@ -44,9 +66,13 @@ page *load_page(b_tree *b, u16 rrn) {
     }
     
     // if is loaded on queue, just grab it from there
-    //  
+    page *q_page = queue_search(b->q, rrn);
+    if(q_page != NULL){
+        puts("@Page found on queue");
+        return q_page;
+    }
 
-    int byte_offset = rrn * b->bh->page_size + sizeof(b_tree_header);
+    int byte_offset = (rrn * b->bh->page_size) + sizeof(b_tree_header);
     fseek(b->io->fp, byte_offset, SEEK_SET);
 
     page *page = alloc_page();
@@ -57,7 +83,7 @@ page *load_page(b_tree *b, u16 rrn) {
 
 void driver(){}
 
-u16 search(b_tree *b, u16 rrn, key key, u16 found_rrn, u16 found_pos, page *return_page) {
+u16 search(b_tree *b, u16 rrn, key key, u16 *found_rrn, u16 *found_pos, page *return_page) {
     page *root = load_page(b, rrn);
     if (root == NULL) {
         puts("!!Error: NULL root");
@@ -65,12 +91,13 @@ u16 search(b_tree *b, u16 rrn, key key, u16 found_rrn, u16 found_pos, page *retu
     }       
 
     page *page = load_page(b, rrn); 
+    int pos;
 
-    u16 pos = search_key(page, key);
-    if(pos == FOUND) { // se b está nessa pagina, POS = FOUND, se tiver na esquerda, ou n existir, POS = NOT_FOUND
-        found_rrn = rrn;
-        found_pos = pos;
-        return_page = page;
+    int flag = search_key(page, key, &pos);
+    if(flag == FOUND) { // se b está nessa pagina, POS = FOUND, se tiver na esquerda, ou n existir, POS = NOT_FOUND
+        *found_rrn = rrn;
+        *found_pos = pos;
+        *return_page = *page;
         return FOUND;
     }
     return search(b, page->children[pos], key, found_rrn, found_pos, return_page);
@@ -96,8 +123,10 @@ bool remove_page(b_tree *b, page *page) {
 }
 
 
-FILE *create_tree_file(char *file_name);
+FILE *create_tree_file(char *file_name) {
+    return NULL;
+}
 
-void print_tree(b_tree_header *bp) {
+void print_register(b_tree_header *bp, u16 rrn) {
     
 }

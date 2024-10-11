@@ -18,7 +18,7 @@
 #define ALUGADO 'alugado'
 #define MANUTENCAO 'em manutencao'
 
-typedef struct header_record header_record;
+typedef struct data_header_record data_header_record;
 typedef struct io_buf io_buf;
 typedef struct data_register data_register;
 
@@ -39,20 +39,23 @@ struct data_register {
     char status[TAMANHO_STATUS];
 };
 
-struct header_record {
-    u16 record_size;
+struct data_header_record {
     u16 id_size;
+    u16 record_size;
     u16 name_size;
+    u16 free_rrn;
 };
 
 
 struct io_buf {
     char address[MAX_ADDRESS];
     FILE *fp;
-    header_record *hr;
+    data_header_record *hr;
 };
 
 io_buf *alloc_io_buf();
+
+void print_data_register(data_register *hr);
 
 void load_file(io_buf *io, char *file_name);
 
@@ -60,9 +63,9 @@ void create_data_file(io_buf *io, char *file_name);
 
 void read_data_header(io_buf *io);
 
-void read_data_register(io_buf *io, u16 rrn);
+data_register *read_data_register(io_buf *io, u16 rrn);
 
-void populate_header(header_record *hp);
+void populate_header(data_header_record *hp);
 
 void write_data_header(io_buf *io);
 

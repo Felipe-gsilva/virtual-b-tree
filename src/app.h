@@ -10,7 +10,6 @@ typedef struct app app;
 struct app {
     io_buf *in;
     io_buf *out;
-    queue *queue;
     b_tree *b;
 };
 
