@@ -49,7 +49,7 @@ void print_queue(queue *queue) {
     printf("Queue: ");
     struct queue *aux = queue->next;
     while (aux) {
-        printf("%hu ", aux->page->keys->key);
+        printf("%s ", aux->page->keys->id);
         aux = aux->next;
     }
     printf("\n");

@@ -1,17 +1,7 @@
 #ifndef _APP
 #define _APP
 
-#include "io-buf.h"
-#include "queue.h"
-#include "b-tree.h"
-
-typedef struct app app;
-
-struct app {
-    io_buf *in;
-    io_buf *out;
-    b_tree *b;
-};
+#include "defines.h"
 
 void cli();
 

@@ -1,18 +1,10 @@
 #ifndef _queue
 #define _queue
 
-#include "page.h"
+#include "defines.h"
 
 // queue max
 #define P 20
-
-typedef struct queue queue;
-
-struct queue {
-    queue *next;
-    page *page;
-    u8 counter;
-};
 
 queue *alloc_queue();
 

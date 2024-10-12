@@ -1,8 +1,7 @@
 #ifndef _btree
 #define _btree
 
-#include "page.h"
-#include "queue.h"
+#include "defines.h"
 
 #define ERROR -1
 #define NOT_FOUND -1
@@ -10,50 +9,53 @@
 #define PROMOTION 2
 #define NO_PROMOTION 3
 
-typedef struct b_tree b_tree;
+b_tree_buf*alloc_tree_buf();
 
-typedef struct b_tree_header b_tree_header;
+void create_new_tree(b_tree_buf*b, io_buf *data, io_buf *index, int n);
 
-struct b_tree_header {
-    u16 root_rrn;
-    u16 page_size;
-};
+void create_index_file(io_buf *io, char *file_name);
 
-struct b_tree {
-    b_tree_header *bh;
-    io_buf *io;
-    queue *q;
-};
-
-
-b_tree *create_new_tree(io_buf *io);
-
-b_tree *alloc_tree_buf();
-
-void clear_tree_buf(b_tree *b);
+void clear_tree_buf(b_tree_buf*b);
 
 void driver();
 
-u16 search(b_tree *b, u16 rrn, key key, u16 *found_rrn, u16 *found_pos, page *return_page);
+u16 search(b_tree_buf*b, io_buf *io, page *p, key key, u16 *found_rrn, u16 *found_pos, page *return_page);
 
 u16 search_key(page *page, key key, int *return_pos);
 
-bool remove_page(b_tree *b, page *page);
+int remove_key(io_buf *io, b_tree_buf*b, page *page);
 
-bool insert_page(b_tree *b, page *page);
+u16 insert_key(b_tree_buf *b, io_buf *io, page *p, key key, page *return_page);
 
 page* split(page *page);
 
-bool promote();
+int promote();
 
-FILE *create_tree_file(char *file_name);
+page *load_page(io_buf *io, queue *q, u16 rrn);
 
-page *load_page(b_tree *b, u16 rrn);
+void print_page(page *page);
 
-void print_register(b_tree_header *bp, u16 rrn);
+void populate_tree_header(index_header_record *b);
 
-void populate_tree_header(b_tree_header *bh);
 
-void create_index_file(io_buf *io, char *file_name, b_tree_header *b);
+void read_index_header(io_buf *io);
+
+void write_index_header(io_buf *io);
+
+void write_index_record(io_buf *io, page *p);
+
+// struct key {
+//   u16 data_register_rrn;
+//   char id[TAMANHO_PLACA];
+// };
+// 
+// struct page{
+//   u16 rrn;
+//   key keys[ORDER-1];            
+//   u16 children[ORDER];
+//   u8 child_number;
+//   u16 father;
+// };
+
 
 #endif
