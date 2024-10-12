@@ -12,7 +12,7 @@ mkdir target
 cd target
 cmake -S . -B target/
 cmake --build target/
-./file-system.test
+./target/VB-TREE
 
 ```
 

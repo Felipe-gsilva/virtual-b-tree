@@ -3,7 +3,7 @@
 
 #include "defines.h"
 
-void cli();
+void cli(app *a);
 
 app *alloc_app();
 

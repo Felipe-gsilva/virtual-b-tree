@@ -64,7 +64,6 @@ data_record *read_data_record(io_buf *io, u16 rrn) {
   }
 
   int byte_offset = sizeof(data_header_record) + (io->hr->record_size * rrn);
-  printf("byteoffset: %d\n", byte_offset);
   fseek(io->fp, byte_offset, SEEK_SET);
   size_t t = fread(hr, sizeof(data_record),1 ,io->fp);
 
@@ -100,7 +99,6 @@ void write_data_record(io_buf *io, data_record *d){
 
   int rrn = retrieve_free_rrn(io->hr);
   int byte_offset = sizeof(data_header_record) + (io->hr->record_size * rrn);
-  printf("byteoffset: %d\n", byte_offset);
   fseek(io->fp, byte_offset, SEEK_SET);
   size_t t = fwrite(d, sizeof(data_record),1 ,io->fp);
 
@@ -108,7 +106,6 @@ void write_data_record(io_buf *io, data_record *d){
     puts("!!Error while writing header record");
     return;
   }
-
 }
 
 void write_data_header(io_buf *io) {
@@ -249,5 +246,6 @@ void clear_io_buf(io_buf *io) {
     free(io);
     io = NULL;
   }
-  puts("@Buffer cleared");
+  if(DEBUG)
+    puts("@IO_BUFFERcleared");
 }

@@ -25,6 +25,10 @@ void clear_tree_buf(b_tree_buf *b) {
       free(b->bh);
       b->bh = NULL;
     }
+    if(b->root) {
+      clear_page(b->root);
+      b->root = NULL;
+    }
     free(b);
     b = NULL;
   }
