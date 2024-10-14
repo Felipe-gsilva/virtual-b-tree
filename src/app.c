@@ -1,6 +1,6 @@
 #include "app.h"
 #include "io-buf.h"
-#include "b-tree.h"
+#include "b-tree-buf.h"
 
 void print_ascii_art() {
   printf("                                         ,----,                                \n");
@@ -22,12 +22,12 @@ void print_ascii_art() {
 }
 
 void cli(app *a) {
-  // TODO
   int choice = -1;
   u8 id;
   char placa[TAMANHO_PLACA];
 
-  print_ascii_art();
+  if(!DEBUG)
+    print_ascii_art();
 
   while(choice != 0) {
     printf("Choose an option:\n");
@@ -43,7 +43,7 @@ void cli(app *a) {
       case 0:
         return;
       case 1:
-        //print_tree();
+ //       print_tree(a->b, a->out);
         break;
       case 2:
         printf("Enter ID to update: ");
@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
 
   load_file(a->in, index_file, "index");
   load_file(a->out, data_file, "data");
-  create_new_tree(a->b, a->out, a->in, 100);
+  create_new_tree(a->b, a->out, 100);
 
   cli(a); 
 

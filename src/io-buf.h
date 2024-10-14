@@ -1,5 +1,5 @@
-#ifndef FILE_H
-#define FILE_H
+#ifndef _IO_BUF_H
+#define _IO_BUF_H
 
 #include "defines.h"
 

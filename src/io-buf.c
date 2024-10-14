@@ -1,5 +1,5 @@
 #include "io-buf.h"
-#include "b-tree.h"
+#include "b-tree-buf.h"
 
 io_buf *alloc_io_buf(){
   io_buf *io = malloc(sizeof(io_buf));
@@ -48,33 +48,33 @@ void print_data_record(data_record *hr) {
   printf("Placa: %s\n", hr->placa);
   printf("Modelo: %s\n", hr->modelo);
   printf("Marca: %s\n", hr->marca);
-  printf("Ano: %d\n", hr->ano);
-  printf("Categoria: %s\n", hr->categoria);
-  printf("Quilometragem: %d\n", hr->quilometragem);
-  printf("Status: %s\n", hr->status);
-  printf("---------------------------\n");
-}
-
-data_record *read_data_record(io_buf *io, u16 rrn) {
-  data_record *hr;
-  hr = malloc(sizeof(data_record));
-  if (!io->fp){
-    puts("!!Error: wrong file pointer");
-    exit(-1);
+    printf("Ano: %d\n", hr->ano);
+    printf("Categoria: %s\n", hr->categoria);
+    printf("Quilometragem: %d\n", hr->quilometragem);
+    printf("Status: %s\n", hr->status);
+    printf("---------------------------\n");
   }
 
-  int byte_offset = sizeof(data_header_record) + (io->hr->record_size * rrn);
-  fseek(io->fp, byte_offset, SEEK_SET);
-  size_t t = fread(hr, sizeof(data_record),1 ,io->fp);
+  data_record *read_data_record(io_buf *io, u16 rrn) {
+    data_record *hr;
+    hr = malloc(sizeof(data_record));
+    if (!io->fp){
+      puts("!!Error: wrong file pointer");
+      exit(-1);
+    }
 
-  if(t != 1) {
-    puts("!!Error while reading header record");
-    return NULL;
-  }
+    int byte_offset = sizeof(data_header_record) + (io->hr->record_size * rrn);
+    fseek(io->fp, byte_offset, SEEK_SET);
+    size_t t = fread(hr, sizeof(data_record),1 ,io->fp);
 
-  if(DEBUG){
-    puts("@Header Record Loaded");
-    print_data_record(hr);
+    if(t != 1) {
+      puts("!!Error while reading header record");
+      return NULL;
+    }
+
+    if(DEBUG){
+      puts("@Header Record Loaded");
+      //print_data_record(hr);
   }
   return hr;
 }

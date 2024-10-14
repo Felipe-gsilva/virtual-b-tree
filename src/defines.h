@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <stdarg.h>
 
-#define DEBUG 0
+#define DEBUG 1  // 1 for dev mode, 0 for prod mode
 #define ORDER 4
 
 // in bytes
@@ -37,19 +37,19 @@ typedef int16_t i16;
 typedef int32_t i32;
 typedef int64_t i64;
 
-typedef struct b_tree_buf b_tree_buf;
 typedef struct index_header_record index_header_record;
 typedef struct data_header_record data_header_record;
+typedef struct b_tree_buf b_tree_buf;
 typedef struct io_buf io_buf;
 typedef struct index_record index_record;
 typedef struct data_record data_record;
 typedef struct queue queue;
-typedef struct app app;
 typedef struct key key;
 typedef struct page page;
+typedef struct app app;
 
 struct key {
-  u16 data_register_rrn;
+  u16  data_register_rrn;
   char id[TAMANHO_PLACA];
 };
 
@@ -57,7 +57,7 @@ struct page{
   u16 rrn;
   key keys[ORDER-1];            
   u16 children[ORDER];
-  u8 child_number;
+  u8  child_number;
   u16 father;
 };
 
@@ -65,22 +65,18 @@ struct page{
 
 struct queue {
   queue *next;
-  page *page;
-  u8 counter;
+  page  *page;
+  u8    counter;
 };
 
 struct data_record {
-  char placa[TAMANHO_PLACA]; // key
-  // Modelo (string)
+  char placa[TAMANHO_PLACA];
   char modelo[TAMANHO_MODELO];
-  // Marca (string)
   char marca[TAMANHO_MARCA];
-  int ano;
-  // Categoria (string) (ex: econômico, luxo, SUV)
+  int  ano;
   char categoria[TAMANHO_CATEGORIA];
-  int quilometragem;
-  // Status de Disponibilidade (string) (disponível, alugado, em manutenção)
-  char status[TAMANHO_STATUS];
+  int  quilometragem;
+  char status[TAMANHO_STATUS];  // Status de Disponibilidade (string) (disponível, alugado, em manutenção)
 };
 
 struct data_header_record {
@@ -103,7 +99,6 @@ struct io_buf {
 };
 
 struct b_tree_buf {
-  index_header_record *bh;
   io_buf *io;
   queue *q;
   page *root;
