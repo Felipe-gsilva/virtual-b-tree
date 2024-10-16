@@ -23,16 +23,15 @@ void print_ascii_art() {
 
 void cli(app *a) {
   int choice = -1;
-  u8 id;
+  page *p;
   char placa[TAMANHO_PLACA];
-
-  if(!DEBUG)
-    print_ascii_art();
+  data_record *d = malloc(sizeof(data_record));
+  print_ascii_art();
 
   while(choice != 0) {
     printf("Choose an option:\n");
     printf("0. Exit\n");
-    printf("1. List\n");
+    printf("1. Search by id\n");
     printf("2. Update\n");
     printf("3. Insert\n");
     printf("4. Remove\n");
@@ -43,7 +42,12 @@ void cli(app *a) {
       case 0:
         return;
       case 1:
- //       print_tree(a->b, a->out);
+        p = search(a->b, placa);
+        if(p) {
+          print_page(p);
+          break;
+        }
+        puts("Page not found!");
         break;
       case 2:
         printf("Enter ID to update: ");
@@ -52,7 +56,8 @@ void cli(app *a) {
         //update_key(id);
         break;
       case 3:
-        //insert_key();
+
+        insert(a->b, a->out, d);
         break;
       case 4:
         printf("Enter ID to remove: ");
@@ -105,30 +110,27 @@ void clear_app(app* app) {
     puts("!! Error while clearing app");
 }
 
+
 int main(int argc, char **argv) {
   app *a;
-  a = alloc_app();
-
-  // ----
-  char index_file[4096];
+  char index_file[MAX_ADDRESS];
+  char data_file[MAX_ADDRESS];
   char value;
+
+  a = alloc_app();
   strcpy(index_file, "public/btree-");
   value = ORDER + '0';
   index_file[13] = value;
   strcat(index_file, ".idx");
-  char data_file[MAX_ADDRESS];
   strcpy(data_file, "public/veiculos.dat");
-  // ----
 
-  create_index_file(a->in, index_file);
+  // b-tree
+  create_index_file(a->b->io, index_file);
   create_data_file(a->out, data_file);
-
-  load_file(a->in, index_file, "index");
+  load_file(a->b->io, index_file, "index");
   load_file(a->out, data_file, "data");
-  create_new_tree(a->b, a->out, 100);
-
+  build_tree(a->b, a->out, 100);
   cli(a); 
-
   clear_app(a);
   return 0;
 }

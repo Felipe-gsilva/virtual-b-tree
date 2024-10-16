@@ -13,6 +13,8 @@
 
 // in bytes
 #define MAX_ADDRESS 4096 
+
+//data record_size
 #define RECORD_SIZE 88 
 
 // size data record 
@@ -23,9 +25,9 @@
 #define TAMANHO_STATUS 16
 
 // status carro
-#define DISPONIVEL 'disponivel'
-#define ALUGADO 'alugado'
-#define MANUTENCAO 'em manutencao'
+#define DISPONIVEL "disponivel"
+#define ALUGADO "alugado"
+#define MANUTENCAO "em manutencao"
 
 typedef uint8_t  u8; 
 typedef uint16_t u16;  
@@ -47,20 +49,21 @@ typedef struct queue queue;
 typedef struct key key;
 typedef struct page page;
 typedef struct app app;
+typedef struct i_list i_list; 
 
 struct key {
   u16  data_register_rrn;
   char id[TAMANHO_PLACA];
 };
 
-struct page{
+struct page {
   u16 rrn;
   key keys[ORDER-1];            
   u16 children[ORDER];
   u8  child_number;
   u16 father;
+  bool leaf;
 };
-
 
 
 struct queue {
@@ -76,7 +79,7 @@ struct data_record {
   int  ano;
   char categoria[TAMANHO_CATEGORIA];
   int  quilometragem;
-  char status[TAMANHO_STATUS];  // Status de Disponibilidade (string) (disponível, alugado, em manutenção)
+  char status[TAMANHO_STATUS];  // Status de Disponibilidade (disponível, alugado, em manutenção)
 };
 
 struct data_header_record {
@@ -89,6 +92,7 @@ struct data_header_record {
 struct index_header_record {
   u16 root_rrn;
   u16 page_size;
+  char free_rrn_address[MAX_ADDRESS];
 };
 
 struct io_buf {
@@ -99,9 +103,16 @@ struct io_buf {
 };
 
 struct b_tree_buf {
+  page *root;
   io_buf *io;
   queue *q;
-  page *root;
+  i_list *i;
+};
+
+struct i_list {
+  io_buf *in;
+  io_buf *out;
+  int *free_rrn;
 };
 
 struct app {
@@ -109,4 +120,5 @@ struct app {
   io_buf *out;
   b_tree_buf *b;
 };
+
 #endif

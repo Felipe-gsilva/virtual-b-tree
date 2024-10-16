@@ -38,8 +38,7 @@ void read_data_header(io_buf *io) {
   io->hr->name_size = hr->name_size;
 
   if(DEBUG) {
-    puts("@Header Record Loaded");
-    printf("-->data_header: record_size: %hu name_size: %hu id_size: %hu free_rrn: %hu\n", io->hr->record_size, io->hr->name_size, io->hr->id_size, io->hr->free_rrn);
+    printf("--> data_header: record_size: %hu name_size: %hu id_size: %hu free_rrn: %hu\n", io->hr->record_size, io->hr->name_size, io->hr->id_size, io->hr->free_rrn);
   }
 }
 
@@ -72,10 +71,6 @@ void print_data_record(data_record *hr) {
       return NULL;
     }
 
-    if(DEBUG){
-      puts("@Header Record Loaded");
-      //print_data_record(hr);
-  }
   return hr;
 }
 

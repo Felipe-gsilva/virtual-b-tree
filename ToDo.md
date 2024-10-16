@@ -1,18 +1,16 @@
-BUGS: not being able to read and retrieve data from fwrite
-
 add io_buf ops
-    - insert 
-    - delete
-    - update
+- [ ] update
 
-- [  ] page insert
-- [  ] page remove
+on pages
+- [ ] page search
+- [ ] page insert
+- [ ] page remove
+- [ ] page update
 
-- [  ] bufferize b-tree
-
-- [  ] queue
+- [ ] inverted list
 
 ---
+
 API exports
 - buscar veículo
 - deletar veículo
