@@ -15,9 +15,6 @@
 // in bytes
 #define MAX_ADDRESS 4096
 
-// data record_size
-#define RECORD_SIZE 88
-
 // size data record
 #define TAMANHO_PLACA 8
 #define TAMANHO_MODELO 20

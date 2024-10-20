@@ -158,7 +158,7 @@ void populate_header(data_header_record *hp, const char *file_name) {
     return;
   }
 
-  hp->record_size = RECORD_SIZE;  
+  hp->record_size = sizeof(data_record);  
   strncpy(hp->free_rrn_address, file_name, MAX_ADDRESS - 1); 
   hp->free_rrn_address[MAX_ADDRESS - 1] = '\0'; 
   hp->size = strlen(file_name) + 1 + sizeof(u16) * 2;  

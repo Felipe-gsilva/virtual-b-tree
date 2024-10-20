@@ -229,6 +229,8 @@ void promote() {} // TODO
 
 page *redistribute(); // TODO
 
+void b_remove(b_tree_buf *b, io_buf *data, char *s) {}
+
 int remove_key(b_tree_buf *b, page *page) {
   return false; // TODO
 }

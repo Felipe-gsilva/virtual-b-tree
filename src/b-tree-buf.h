@@ -39,6 +39,8 @@ u16 search_page(page *page, key key, int *return_pos);
 
 int remove_key( b_tree_buf*b, page *page);
 
+void b_remove(b_tree_buf *b, io_buf *data, char *s);
+
 void print_page(page *page);
 
 page *load_page(io_buf *io, queue *q, u16 rrn);

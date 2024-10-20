@@ -65,7 +65,7 @@ void cli(app *a) {
         scanf("%s", placa);
         puts("tamanho paia");
         printf("%s", placa);
-        //remove_key(id);
+        b_remove(a->b, a->out, placa);
         break;
       case 5: 
         print_queue(a->b->q);
