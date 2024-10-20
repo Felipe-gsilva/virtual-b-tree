@@ -15,12 +15,12 @@ void read_data_header(io_buf *io);
 
 data_record *read_data_record(io_buf *io, u16 rrn);
 
-void populate_header(data_header_record *hp);
+void populate_header(data_header_record *hp, const char *file_name);
 
 void write_data_header(io_buf *io);
 
-void write_data_record(io_buf *io, data_record *d);
+void write_data_record(io_buf *io, data_record *d, u16 rrn);
 
 void clear_io_buf(io_buf *io_buf);
 
-#endif 
+#endif

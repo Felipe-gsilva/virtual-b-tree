@@ -1,6 +1,8 @@
 #include "app.h"
 #include "io-buf.h"
 #include "b-tree-buf.h"
+#include "i_list.h"
+#include "queue.h"
 
 void print_ascii_art() {
   printf("                                         ,----,                                \n");
@@ -56,8 +58,7 @@ void cli(app *a) {
         //update_key(id);
         break;
       case 3:
-
-        insert(a->b, a->out, d);
+        insert(a->b, a->out, d, get_free_rrn(a->b->i));
         break;
       case 4:
         printf("Enter ID to remove: ");
@@ -65,6 +66,9 @@ void cli(app *a) {
         puts("tamanho paia");
         printf("%s", placa);
         //remove_key(id);
+        break;
+      case 5: 
+        print_queue(a->b->q);
         break;
       default: 
         printf("Invalid choice.\n");
@@ -115,22 +119,32 @@ int main(int argc, char **argv) {
   app *a;
   char index_file[MAX_ADDRESS];
   char data_file[MAX_ADDRESS];
-  char value;
+  char converted_char;
 
   a = alloc_app();
   strcpy(index_file, "public/btree-");
-  value = ORDER + '0';
-  index_file[13] = value;
+  converted_char = ORDER + '0';
+  index_file[13] = converted_char;
   strcat(index_file, ".idx");
   strcpy(data_file, "public/veiculos.dat");
 
-  // b-tree
   create_index_file(a->b->io, index_file);
   create_data_file(a->out, data_file);
+  // TODO create_data_file(a->in, real_data_file);
+
+  load_list(a->b->i, a->b->io->hr->free_rrn_address);
+
+  check;
   load_file(a->b->io, index_file, "index");
   load_file(a->out, data_file, "data");
-  build_tree(a->b, a->out, 100);
+  check;
+
+  check;
+  build_tree(a->b, a->out, 99);
+  check;
+
   cli(a); 
+
   clear_app(a);
   return 0;
 }

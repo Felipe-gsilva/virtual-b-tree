@@ -1,8 +1,9 @@
-add io_buf ops
-- [ ] update
+- [ ] fix opening file and creation
+
+- [x] add io_buf ops
 
 on pages
-- [ ] page search
+- [x] page search
 - [ ] page insert
 - [ ] page remove
 - [ ] page update
@@ -12,7 +13,7 @@ on pages
 ---
 
 API exports
-- buscar veículo
-- deletar veículo
-- criar veículo
-- atualizar veículo
+- [ ] buscar veículo
+- [ ] deletar veículo
+- [ ] criar veículo
+- [ ] atualizar veículo

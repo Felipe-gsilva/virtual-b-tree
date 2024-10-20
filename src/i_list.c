@@ -3,8 +3,7 @@
 
 i_list *alloc_ilist() {
   i_list *i = malloc(sizeof(i_list));
-  i->in = alloc_io_buf();
-  i->out = alloc_io_buf();
+  i->io = alloc_io_buf();
   if(i)
     return i;
   exit(-1);
@@ -12,13 +11,14 @@ i_list *alloc_ilist() {
 
 void clear_ilist(i_list *i) {
   if(i) {
-    clear_io_buf(i->out);
-    clear_io_buf(i->in);
+    free(i->free_rrn);
+    i->free_rrn = NULL;
+    clear_io_buf(i->io);
     free(i); 
     i = NULL;
   }
   if(DEBUG)
-    puts("@i_list cleared");
+    puts("@list cleared");
 }
 
 void load_list(i_list *i, char* s) {
@@ -26,15 +26,52 @@ void load_list(i_list *i, char* s) {
     puts("!!Error: empty i list");
     return;
   }
-  if(!i->in) {
+
+  if(!i->io) {
     puts("!!Error: empty io buffer on i list");
     return;
   }
 
-  i->in->fp = fopen(s, "w");
-  if (!i->in->fp) {
+  strcpy(i->io->address, s);
+  i->io->fp = fopen(i->io->address, "r+b");
+  if (!i->io->fp) {
     printf("!!Error opening file: %s", s);
-    return; 
+    i->io->fp = fopen(i->io->address, "wb");
+    if(i->io->fp) {
+      fclose(i->io->fp);
+      i->io->fp = fopen(i->io->address, "r+b");
+    }
   }
-  fprintf(i->in->fp, "FREE RRN LIST");
+}
+
+u16 *load_rrn_list(i_list *i) {
+  u16 *c;
+  c = malloc(sizeof(u16) * i->n);
+
+  fseek(i->io->fp, 0, SEEK_SET);
+  int flag = fread(c, sizeof(c), i->n, i->io->fp);
+  if(!flag)
+    return c;
+
+  puts("!!Error: no free rrn on i_list");
+  return NULL;
+}
+
+u16 get_free_rrn(i_list *i) {
+  i->free_rrn = load_rrn_list(i);
+  if(i->free_rrn)
+    return i->free_rrn[0];
+  puts("!!Error: null free rrn pointer");
+  exit(0);
+}
+
+void insert_list(i_list *i, u16 rrn) {
+  if(!i->io->fp) {
+    puts("!!Error: NULL rrn list");
+    return;
+  }
+  
+  fseek(i->io->fp, i->n * sizeof(u16), SEEK_SET);
+  fwrite(&rrn, sizeof(u16), 1, i->io->fp);
+  i->n++;
 }
