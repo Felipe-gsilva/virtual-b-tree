@@ -42,7 +42,7 @@ void populate_tree_header(index_header_record *bh, char *file_name) {
 
   bh->page_size = sizeof(page);
   bh->root_rrn = 0;
-  bh->size = (sizeof(u16) *2) + strlen(file_name) + 1;
+  bh->size = (sizeof(u16) * 2) + strlen(file_name) + 1;
   strcpy(bh->free_rrn_address, file_name);
 }
 
@@ -75,7 +75,7 @@ page *load_page(io_buf *io, queue *q, u16 rrn) {
   }
 
   int byte_offset = (rrn * io->br->page_size) + io->br->size;
-  if(fseek(io->fp, byte_offset, SEEK_SET)) {
+  if (fseek(io->fp, byte_offset, SEEK_SET)) {
     puts("!!Error: could not fseek");
     return NULL;
   }
@@ -101,17 +101,17 @@ page *search(b_tree_buf *b, const char *s) {
   return NULL;
 }
 
-u16 search_page(page *page, key key, int *return_pos) {
-  if (!page)
+u16 search_in_page(page *page, key key, int *return_pos) {
+  if (!page || !page->rrn)
     return ERROR;
 
-  for (int i = 0; i < ORDER-1; i++) {
+  for (int i = 0; i < ORDER - 1; i++) {
     if (memcmp(page->keys[i].id, key.id, TAMANHO_PLACA) == 0) {
       *return_pos = i;
       return FOUND;
     }
     if (memcmp(page->keys[i].id, key.id, TAMANHO_PLACA) < 0) {
-      puts("chave atual maior");
+      puts("@Curr key is greater than ");
       *return_pos = i - 1;
       return NOT_FOUND;
     }
@@ -134,7 +134,7 @@ u16 search_key(b_tree_buf *b, page *p, key key, u16 *found_pos,
   page *temp = p;
   int pos;
 
-  int flag = search_page(temp, key, &pos);
+  int flag = search_in_page(temp, key, &pos);
   if (flag == FOUND) {
     *found_pos = pos;
     *return_page = *temp;
@@ -142,12 +142,6 @@ u16 search_key(b_tree_buf *b, page *p, key key, u16 *found_pos,
   }
 
   temp = load_page(b->io, b->q, temp->children[pos]);
-
-  if (temp == NULL) {
-    puts("!!Error: Failed to load child page");
-    return NOT_FOUND;
-  }
-
   return search_key(b, temp, key, found_pos, return_page);
 }
 
@@ -202,7 +196,10 @@ void insert_in_page(page *p, key k, page *r_child, int pos) {
 }
 
 void split(page *p, key k, page *r_child, key *promo_key, page *new_page,
-           int pos) {} // TODO
+           int pos) {
+
+
+} // TODO
 
 u16 insert_key(b_tree_buf *b, page *p, key k, key *promo_key, page *r_child) {
   page *temp;
@@ -215,7 +212,7 @@ u16 insert_key(b_tree_buf *b, page *p, key k, key *promo_key, page *r_child) {
     return PROMOTION;
   }
 
-  flag = search_page(p, k, &pos);
+  flag = search_in_page(p, k, &pos);
   printf("flag from search_key: %d\n", flag);
   if (flag == FOUND) {
     puts("!!Error: key already inserted");
@@ -225,6 +222,10 @@ u16 insert_key(b_tree_buf *b, page *p, key k, key *promo_key, page *r_child) {
   temp = load_page(b->io, b->q, p->children[pos]);
   flag = insert_key(b, temp, k, &promo, r_child);
 
+  if(flag > 3 || flag < -3) {
+    puts("wtf");
+    exit(-1);
+  }
   if (flag == NO_PROMOTION || flag == ERROR) {
     puts("!!Error: no promotion or error");
     return flag;
@@ -248,11 +249,11 @@ u16 insert_key(b_tree_buf *b, page *p, key k, key *promo_key, page *r_child) {
   return PROMOTION;
 }
 
-void promote() {} // TODO
-
 page *redistribute(); // TODO
 
-void b_remove(b_tree_buf *b, io_buf *data, char *s) {}
+void b_remove(b_tree_buf *b, io_buf *data, char *s) {
+  // TODO
+}
 
 int remove_key(b_tree_buf *b, page *page) {
   return false; // TODO
@@ -261,13 +262,13 @@ int remove_key(b_tree_buf *b, page *page) {
 void print_page(page *page) {
   printf("page rrn: %hu\n", page->rrn);
   for (int i = 0; i < ORDER; i++) {
-    printf("key id: %s data_register_rrn: %hu, ", page->keys[i].id,
+    printf("key id: %s data_register_rrn: %hu;\t", page->keys[i].id,
            page->keys[i].data_register_rrn);
   }
   printf("\n");
   printf("children rrn: ");
   for (int i = 0; i < page->child_number + 1; i++) {
-    printf("%hu", page->children[i]);
+    printf("i:%d=%hu\t", i, page->children[i]);
   }
   printf("\n");
   if (page->leaf)
@@ -430,18 +431,12 @@ page *alloc_page() {
   return NULL;
 }
 
-page *new_page(u16 rrn, key keys[], u16 children[]) {
+page *new_page(u16 rrn) {
   page *page = alloc_page();
   page->rrn = rrn;
-  if (keys && children) {
-    for (int i = 0; i < ORDER - 1; i++) {
-      page->keys[i] = keys[i];
-      page->children[i] = children[i];
-    }
-    page->children[ORDER - 1] = children[ORDER - 1];
-  }
-  if (page)
+  if(page)
     return page;
+  puts("!!Error: could not creat a page");
   return NULL;
 }
 

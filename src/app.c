@@ -137,14 +137,13 @@ int main(int argc, char **argv) {
   load_file(a->out, data_file, "data");
 
   if(!a->b->io->br->root_rrn) {
-    page *p = new_page(0,0,0);
+    page *p = new_page(0);
     a->b->root = p;
     print_page(a->b->root);
     build_tree(a->b, a->out, 99);
   }
 
   cli(a); 
-
   clear_app(a);
   return 0;
 }

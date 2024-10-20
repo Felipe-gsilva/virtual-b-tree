@@ -35,7 +35,7 @@ page *search(b_tree_buf *b, const char *s);
 
 u16 search_key(b_tree_buf *b, page *p, key key, u16 *found_pos, page *return_page);
 
-u16 search_page(page *page, key key, int *return_pos);
+u16 search_in_page(page *page, key key, int *return_pos);
 
 int remove_key( b_tree_buf*b, page *page);
 
@@ -55,7 +55,7 @@ void write_index_record(io_buf *io, page *p);
 
 page *alloc_page();
 
-page *new_page(u16 rrn, key keys[], u16 children[]);
+page *new_page(u16 rrn);
 
 void clear_page(page *page);
 
