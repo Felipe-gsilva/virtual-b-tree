@@ -42,24 +42,23 @@ void populate_tree_header(index_header_record *bh, char *file_name) {
 
   bh->page_size = sizeof(page);
   bh->root_rrn = 0;
+  bh->size = (sizeof(u16) *2) + strlen(file_name) + 1;
   strcpy(bh->free_rrn_address, file_name);
 }
 
 void build_tree(b_tree_buf *b, io_buf *data, int n) {
-  data_record *d;
-  d = malloc(sizeof(data_record));
+  data_record d;
   if (!b->i)
     load_list(b->i, b->io->br->free_rrn_address);
   if (b->i)
-    if(DEBUG)
+    if (DEBUG)
       puts("@Loaded rrn list");
-  for (int i = 0; i < n; i++) {
-    puts("testing data record");
-    d = read_data_record(data, i);
-    insert(b, data, d, i);
+  for (int i = 0; i < 3; i++) {
+    d = *read_data_record(data, i);
+    insert(b, data, &d, i);
   }
-  free(d);
-  return;
+  if (DEBUG)
+    puts("@Built tree");
 }
 
 page *load_page(io_buf *io, queue *q, u16 rrn) {
@@ -75,8 +74,11 @@ page *load_page(io_buf *io, queue *q, u16 rrn) {
     return q_page;
   }
 
-  int byte_offset = (rrn * io->br->page_size) + sizeof(index_header_record);
-  fseek(io->fp, byte_offset, SEEK_SET);
+  int byte_offset = (rrn * io->br->page_size) + io->br->size;
+  if(fseek(io->fp, byte_offset, SEEK_SET)) {
+    puts("!!Error: could not fseek");
+    return NULL;
+  }
 
   page *page = alloc_page();
   fread(page, io->br->page_size, 1, io->fp);
@@ -103,7 +105,7 @@ u16 search_page(page *page, key key, int *return_pos) {
   if (!page)
     return ERROR;
 
-  for (int i = 0; i < ORDER - 1; i++) {
+  for (int i = 0; i < ORDER-1; i++) {
     if (memcmp(page->keys[i].id, key.id, TAMANHO_PLACA) == 0) {
       *return_pos = i;
       return FOUND;
@@ -123,9 +125,12 @@ u16 search_key(b_tree_buf *b, page *p, key key, u16 *found_pos,
     puts("!!Error: NULL root");
     return ERROR;
   }
+
   if (p == NULL) {
+    puts("Null page");
     return NOT_FOUND;
   }
+
   page *temp = p;
   int pos;
 
@@ -157,25 +162,43 @@ void insert(b_tree_buf *b, io_buf *data, data_record *d, u16 rrn) {
   page *return_page = malloc(sizeof(page));
 
   populate_key(&k, d, rrn);
-  print_data_record(d);
   int flag = insert_key(b, b->root, k, return_key, return_page);
   if (flag == PROMOTION) {
-    if (DEBUG)
-      puts("@New root");
-    b->root = return_page;
-    // TODO fix new root
+    if (DEBUG) {
+      puts("@New root creation triggered by promotion");
+    }
+
+    page *new_root = alloc_page();
+    new_root->keys[0] = *return_key;
+    new_root->children[0] = b->root->rrn;
+    new_root->children[1] = return_page->rrn;
+    new_root->child_number = 2;
+    b->root = new_root;
   }
+
+  free(return_key);
+  free(return_page);
 }
 
-void insert_in_page(page *p, key k, page *r_child, int pos, bool direction) {
+void insert_in_page(page *p, key k, page *r_child, int pos) {
   if (!p) {
     puts("!!Error: page NULL");
     return;
   }
-  p->child_number += 1;
+
+  for (int i = p->child_number - 1; i >= pos; i--)
+    p->keys[i + 1] = p->keys[i];
+
   p->keys[pos] = k;
-  if (r_child)
-    p->children[pos + direction] = r_child->rrn;
+
+  for (int i = p->child_number; i >= pos + 1; i--) {
+    p->children[i + 1] = p->children[i];
+  }
+
+  if (r_child) {
+    p->children[pos + 1] = r_child->rrn;
+    p->child_number += 1;
+  }
 }
 
 void split(page *p, key k, page *r_child, key *promo_key, page *new_page,
@@ -210,7 +233,7 @@ u16 insert_key(b_tree_buf *b, page *p, key k, key *promo_key, page *r_child) {
   if (p->child_number < ORDER - 1) {
     if (DEBUG)
       puts("@Free space on page. Inserting..");
-    insert_in_page(p, promo, r_child, pos, 1);
+    insert_in_page(p, promo, r_child, pos);
     return NO_PROMOTION;
   }
 
@@ -270,7 +293,7 @@ void write_index_header(io_buf *io) {
     return;
   }
 
-  size_t free_rrn_len = strlen(io->br->free_rrn_address)+ 1;
+  size_t free_rrn_len = strlen(io->br->free_rrn_address) + 1;
   size_t total_size =
       sizeof(io->br->root_rrn) + sizeof(io->br->page_size) + free_rrn_len;
 
@@ -306,10 +329,9 @@ void read_index_header(io_buf *io) {
     return;
   }
 
-
   index_header_record hr;
   fseek(io->fp, 0, SEEK_SET);
-  size_t t = fread(&hr, sizeof(u16)*2, 1, io->fp);
+  size_t t = fread(&hr, sizeof(u16) * 2, 1, io->fp);
 
   if (t != 1) {
     puts("!!Error while reading header record");
@@ -335,7 +357,6 @@ void read_index_header(io_buf *io) {
   }
 }
 
-
 void create_index_file(io_buf *io, char *file_name) {
   if (!io || !file_name) {
     puts("!!Invalid io buffer or file name");
@@ -358,7 +379,6 @@ void create_index_file(io_buf *io, char *file_name) {
       puts("!!Memory allocation failed for index_header_record");
       return;
     }
-    // Allocate memory for free_rrn_address
     io->br->free_rrn_address = malloc(sizeof(char) * MAX_ADDRESS);
     if (io->br->free_rrn_address == NULL) {
       puts("!!Memory allocation failed for free_rrn_address");
@@ -386,7 +406,6 @@ void create_index_file(io_buf *io, char *file_name) {
     }
   }
 
-  // Copy and prepare the .hlp extension file name
   char list_name[MAX_ADDRESS];
   strcpy(list_name, file_name);
   char *dot = strrchr(list_name, '.');
@@ -394,12 +413,11 @@ void create_index_file(io_buf *io, char *file_name) {
     strcpy(dot, ".hlp");
   }
 
-  // Ensure free_rrn_address is not NULL and copy the list_name into it
   strcpy(io->br->free_rrn_address, list_name);
 
-  // Populate the index header and write it to the file
   populate_tree_header(io->br, io->br->free_rrn_address);
-  write_index_header(io);  // Ensure this function correctly handles file I/O
+  write_index_header(io);
+
   if (DEBUG) {
     puts("@Index file created successfully");
   }

@@ -21,7 +21,7 @@ u16 insert_key(b_tree_buf *b, page *p, key k, key *promo_key, page *r_child);
 
 void split(page *p, key k, page *r_child, key *promo_key, page *new_page, int pos);
 
-void insert_in_page(page *p, key k, page *r_child, int pos, bool direction);
+void insert_in_page(page *p, key k, page *r_child, int pos);
 
 void promote();
 

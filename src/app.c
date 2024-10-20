@@ -130,18 +130,18 @@ int main(int argc, char **argv) {
 
   create_index_file(a->b->io, index_file);
   create_data_file(a->out, data_file);
-  // TODO create_data_file(a->in, real_data_file);
 
   load_list(a->b->i, a->b->io->hr->free_rrn_address);
 
-  check;
   load_file(a->b->io, index_file, "index");
   load_file(a->out, data_file, "data");
-  check;
 
-  check;
-  build_tree(a->b, a->out, 99);
-  check;
+  if(!a->b->io->br->root_rrn) {
+    page *p = new_page(0,0,0);
+    a->b->root = p;
+    print_page(a->b->root);
+    build_tree(a->b, a->out, 99);
+  }
 
   cli(a); 
 

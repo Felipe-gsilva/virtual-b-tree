@@ -56,7 +56,7 @@ struct key {
 
 struct page {
   u16 rrn;
-  key keys[ORDER - 1];
+  key keys[ORDER-1];
   u16 children[ORDER];
   u8 child_number;
   u16 father;
@@ -76,8 +76,7 @@ struct data_record {
   int ano;
   char categoria[TAMANHO_CATEGORIA];
   int quilometragem;
-  char status[TAMANHO_STATUS]; // Status de Disponibilidade (disponível,
-                               // alugado, em manutenção)
+  char status[TAMANHO_STATUS]; // Status de Disponibilidade (disponível, alugado, em manutenção)
 };
 
 struct data_header_record {

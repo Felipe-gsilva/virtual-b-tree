@@ -40,7 +40,8 @@ void read_data_header(io_buf *io) {
 
   data_header_record temp_hr;
   fseek(io->fp, 0, SEEK_SET);
-  size_t t = fread(&temp_hr, sizeof(temp_hr.size) + sizeof(temp_hr.record_size), 1, io->fp);
+  size_t t = fread(&temp_hr, sizeof(temp_hr.size) + sizeof(temp_hr.record_size),
+                   1, io->fp);
   if (t != 1) {
     puts("!!Error while reading header record (fixed part)");
     return;
@@ -64,12 +65,15 @@ void read_data_header(io_buf *io) {
     return;
   }
 
-  t = fread(io->hr->free_rrn_address, rrn_len, 1, io->fp);
+  t = fread(temp_hr.free_rrn_address, rrn_len, 1, io->fp);
   if (t != 1) {
     puts("!!Error while reading free_rrn_address");
-    free(io->hr->free_rrn_address);
     return;
   }
+
+  if (DEBUG)
+    printf("free_rrn_address read: %s\n\n\n", temp_hr.free_rrn_address);
+  strcpy(io->hr->free_rrn_address, temp_hr.free_rrn_address);
 
   if (DEBUG) {
     printf("--> data_header: record_size: %hu size: %hu free_rrn_address: %s\n",
@@ -78,7 +82,6 @@ void read_data_header(io_buf *io) {
 }
 
 void print_data_record(data_record *hr) {
-  printf("Registro de RNN 0\n");
   printf("Placa: %s\n", hr->placa);
   printf("Modelo: %s\n", hr->modelo);
   printf("Marca: %s\n", hr->marca);
@@ -88,6 +91,7 @@ void print_data_record(data_record *hr) {
   printf("Status: %s\n", hr->status);
   printf("---------------------------\n");
 }
+
 data_record *read_data_record(io_buf *io, u16 rrn) {
   if (!io || !io->fp) {
     puts("!!Invalid IO buffer or file pointer");
@@ -101,40 +105,91 @@ data_record *read_data_record(io_buf *io, u16 rrn) {
   }
 
   int byte_offset = io->hr->size + (io->hr->record_size * rrn);
-  fseek(io->fp, byte_offset, SEEK_SET);
+  printf("Header size: %d, Record size: %d, RRN: %d, byte_offset: %d\n",
+         io->hr->size, io->hr->record_size, rrn, byte_offset);
+
+  if (fseek(io->fp, byte_offset, SEEK_SET) != 0) {
+    puts("!!Error seeking to byte offset");
+    free(hr);
+    return NULL;
+  }
+
   size_t t = fread(hr, sizeof(data_record), 1, io->fp);
   if (t != 1) {
     puts("!!Error while reading data record");
     free(hr);
     return NULL;
   }
-
   return hr;
 }
 
-void write_data_header(io_buf *io) {
+void prepend_data_header(io_buf *io) {
   if (!io || !io->fp || !io->hr || !io->hr->free_rrn_address) {
-    puts("!!Invalid input in write_data_header");
+    puts("!!Invalid input in prepend_data_header");
     return;
   }
 
-  size_t free_rrn_len = strlen(io->hr->free_rrn_address) + 1;
-  size_t total_size = sizeof(u16) * 2 + free_rrn_len;
+  size_t free_rrn_len = strlen(io->hr->free_rrn_address) + 1,
+         header_size = sizeof(u16) * 2 + free_rrn_len;
 
-  if (io->hr->size != total_size) {
-    io->hr->size = total_size;
+  if (io->hr->size != header_size) {
+    io->hr->size = header_size;
   }
 
+  fseek(io->fp, 0, SEEK_END);
+  long original_file_size = ftell(io->fp);
+
+  if (original_file_size <= 0) {
+    puts("!!File is empty, no content to prepend");
+    original_file_size = 0;
+  }
+
+  char *buffer = NULL;
+  if (original_file_size > 0) {
+    buffer = malloc(original_file_size);
+    if (buffer == NULL) {
+      puts("!!Memory allocation failed for file content");
+      return;
+    }
+
+    fseek(io->fp, 0, SEEK_SET);
+    if (fread(buffer, 1, original_file_size, io->fp) != original_file_size) {
+      puts("!!Error reading original file content");
+      free(buffer);
+      return;
+    }
+  }
+
+  fclose(io->fp);
+  io->fp = fopen(io->address, "wb");
+  if (io->fp == NULL) {
+    puts("!!Error reopening file in write mode");
+    if (buffer)
+      free(buffer);
+    return;
+  }
+
+  printf("free rrn address: %s\n", io->hr->free_rrn_address);
   fseek(io->fp, 0, SEEK_SET);
-  if (fwrite(&io->hr->size, sizeof(io->hr->size), 1, io->fp) != 1 ||
-      fwrite(&io->hr->record_size, sizeof(io->hr->record_size), 1, io->fp) != 1 ||
+  if (fwrite(&io->hr->size, sizeof(u16), 1, io->fp) != 1 ||
+      fwrite(&io->hr->record_size, sizeof(u16), 1, io->fp) != 1 ||
       fwrite(io->hr->free_rrn_address, free_rrn_len, 1, io->fp) != 1) {
-    puts("!!Error while writing header record");
+    puts("!!Error writing header to file");
+    if (buffer)
+      free(buffer);
+    return;
   }
 
-  if (DEBUG) {
-    printf("@Successfully written: %hu %hu %s\n", io->hr->record_size, io->hr->size, io->hr->free_rrn_address);
+  if (buffer && original_file_size > 0) {
+    if (fwrite(buffer, 1, original_file_size, io->fp) != original_file_size) {
+      puts("!!Error writing original content after header");
+    }
+    free(buffer);
   }
+
+  if (DEBUG)
+    printf("@Successfully written header: %hu %hu %s\n", io->hr->record_size,
+           io->hr->size, io->hr->free_rrn_address);
 }
 
 void write_data_record(io_buf *io, data_record *d, u16 rrn) {
@@ -151,20 +206,17 @@ void write_data_record(io_buf *io, data_record *d, u16 rrn) {
   }
 }
 
-
 void populate_header(data_header_record *hp, const char *file_name) {
   if (hp == NULL) {
     puts("!!Header pointer is NULL, cannot populate");
     return;
   }
 
-  hp->record_size = sizeof(data_record);  
-  strncpy(hp->free_rrn_address, file_name, MAX_ADDRESS - 1); 
-  hp->free_rrn_address[MAX_ADDRESS - 1] = '\0'; 
-  hp->size = strlen(file_name) + 1 + sizeof(u16) * 2;  
+  hp->record_size = sizeof(data_record);
+  strcpy(hp->free_rrn_address, file_name);
+  hp->free_rrn_address[strlen(file_name) + 1] = '\0';
+  hp->size = strlen(file_name) + 1 + sizeof(u16) * 2;
 }
-
-
 
 void load_file(io_buf *io, char *file_name, const char *type) {
   if (!file_name) {
@@ -178,11 +230,11 @@ void load_file(io_buf *io, char *file_name, const char *type) {
       puts("!!ERROR: failed to close file");
       return;
     }
-    io->fp = NULL; 
+    io->fp = NULL;
   }
 
-  strncpy(io->address, file_name, MAX_ADDRESS - 1);  
-  io->address[MAX_ADDRESS - 1] = '\0';  
+  memcpy(io->address, file_name, strlen(file_name));
+  io->address[strlen(file_name) + 1] = '\0';
 
   printf("@Loading file: %s\n", file_name);
 
@@ -193,7 +245,7 @@ void load_file(io_buf *io, char *file_name, const char *type) {
   }
 
   if (strcmp(type, "index") == 0) {
-    if (io->br == NULL) { 
+    if (io->br == NULL) {
       io->br = malloc(sizeof(index_header_record));
       if (io->br == NULL) {
         puts("!!Memory allocation failed for index_header_record");
@@ -201,25 +253,24 @@ void load_file(io_buf *io, char *file_name, const char *type) {
       }
     }
     read_index_header(io);
-  } 
-  else if (strcmp(type, "data") == 0) {
-    if (io->hr == NULL) { 
+  } else if (strcmp(type, "data") == 0) {
+    if (io->hr == NULL) {
       io->hr = malloc(sizeof(data_header_record));
       if (io->hr == NULL) {
         puts("!!Memory allocation failed for data_header_record");
-        fclose(io->fp);  
+        fclose(io->fp);
         return;
       }
     }
     read_data_header(io);
-  } 
-  else {
+  } else {
     puts("!!Invalid file type");
-    fclose(io->fp); 
+    fclose(io->fp);
     return;
   }
 
-  if (strcmp(type, "data") == 0 && (io->hr->record_size == 0 || io->hr->size == 0)) {
+  if (strcmp(type, "data") == 0 &&
+      (io->hr->record_size == 0 || io->hr->size == 0)) {
     puts("!!Error: one or more inputs in data_header_record are 0");
     fclose(io->fp);
     return;
@@ -234,7 +285,6 @@ void load_file(io_buf *io, char *file_name, const char *type) {
   puts("@File loaded");
 }
 
-
 void create_data_file(io_buf *io, char *file_name) {
   if (!io || !file_name) {
     puts("!!Invalid IO buffer or file name");
@@ -248,49 +298,63 @@ void create_data_file(io_buf *io, char *file_name) {
     return;
   }
 
-  io->fp = fopen(io->address, "r+b");
-  if (!io->fp) {
-    printf("!!Error opening file: %s. Creating it...\n", io->address);
-    io->fp = fopen(io->address, "wb");  
-    if (!io->fp) {
-      puts("!!Error creating file");
-      return;
-    }
-    fclose(io->fp); 
-    io->fp = fopen(io->address, "r+b");  
-    if (!io->fp) { 
-      puts("!!Failed to reopen file");
-      return;
-    }
-  }
-
-  if (io->hr == NULL) {
-    io->hr = malloc(sizeof(data_header_record));
-    if (io->hr == NULL) {
-      puts("!!Memory allocation failed for data_header_record");
-      fclose(io->fp); 
-      return;
-    }
-  }
-
+  int prepend = 0;
   char list_name[MAX_ADDRESS];
   strcpy(list_name, file_name);
   char *dot = strrchr(list_name, '.');
   if (dot) {
-    strcpy(dot, ".hlp"); 
+    strcpy(dot, ".hlp");
   }
 
-  populate_header(io->hr, list_name);
-  write_data_header(io);  
+  io->fp = fopen(io->address, "r+b");
+  if (!io->fp) {
+    printf("!!Error opening file: %s. Creating it...\n", io->address);
+    io->fp = fopen(io->address, "wb");
+    if (!io->fp) {
+      puts("!!Error creating file");
+      return;
+    }
+    fclose(io->fp);
+    io->fp = fopen(io->address, "r+b");
+    prepend = 1;
+    populate_header(io->hr, list_name);
+  } else {
+    if (io->hr == NULL) {
+      io->hr = malloc(sizeof(data_header_record));
+      if (io->hr == NULL) {
+        puts("!!Memory allocation failed for data_header_record");
+        fclose(io->fp);
+        return;
+      }
+    }
+    read_data_header(io);
+
+    if (io->hr->record_size != sizeof(data_record) || io->hr->size < 0 ||
+        io->hr->size > MAX_ADDRESS + 4 ||
+        strcmp(io->hr->free_rrn_address, list_name) != 0) {
+      prepend = 1;
+      populate_header(io->hr, list_name);
+    }
+  }
+
+  if (prepend == 1) {
+    if (DEBUG)
+      puts("@Prepending data header");
+    populate_header(io->hr, list_name);
+    prepend_data_header(io);
+  } else {
+    if (DEBUG)
+      puts("@Header already exists, no need to prepend");
+  }
 
   if (DEBUG) {
     puts("@Data file created successfully");
   }
-  
 }
 
 void clear_io_buf(io_buf *io) {
-  if (!io) return;
+  if (!io)
+    return;
 
   if (io->fp) {
     fclose(io->fp);

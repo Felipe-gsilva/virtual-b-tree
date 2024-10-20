@@ -17,6 +17,8 @@ data_record *read_data_record(io_buf *io, u16 rrn);
 
 void populate_header(data_header_record *hp, const char *file_name);
 
+void prepend_data_header(io_buf *io);
+
 void write_data_header(io_buf *io);
 
 void write_data_record(io_buf *io, data_record *d, u16 rrn);
