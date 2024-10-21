@@ -1,6 +1,5 @@
 #include "io-buf.h"
 #include "b-tree-buf.h"
-#include "i_list.h"
 
 io_buf *alloc_io_buf() {
   io_buf *io = malloc(sizeof(io_buf));
@@ -32,6 +31,7 @@ io_buf *alloc_io_buf() {
   }
   return io;
 }
+
 void read_data_header(io_buf *io) {
   if (!io || !io->fp) {
     puts("!!Invalid IO buffer or file pointer");
@@ -71,8 +71,6 @@ void read_data_header(io_buf *io) {
     return;
   }
 
-  if (DEBUG)
-    printf("free_rrn_address read: %s\n\n\n", temp_hr.free_rrn_address);
   strcpy(io->hr->free_rrn_address, temp_hr.free_rrn_address);
 
   if (DEBUG) {

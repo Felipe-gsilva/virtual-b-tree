@@ -55,6 +55,7 @@ void build_tree(b_tree_buf *b, io_buf *data, int n) {
       puts("@Loaded rrn list");
   for (int i = 0; i < 3; i++) {
     d = *read_data_record(data, i);
+    print_data_record(&d);
     insert(b, data, &d, i);
   }
   if (DEBUG)
@@ -90,29 +91,38 @@ page *load_page(io_buf *io, queue *q, u16 rrn) {
 }
 
 page *search(b_tree_buf *b, const char *s) {
-  u16 pos;
+  u16 *pos = malloc(sizeof(u16));
   page *return_page;
   key key;
   strcpy(key.id, s);
 
-  int flag = search_key(b, b->root, key, &pos, return_page);
-  if (flag == FOUND)
+  int flag = search_key(b, b->root, key, pos, return_page);
+  if (flag == FOUND){
+    free(pos);
     return return_page;
+  }
+  puts("--> Could not find key");
+  free(pos);
   return NULL;
 }
 
-u16 search_in_page(page *page, key key, int *return_pos) {
-  if (!page || !page->rrn)
+int search_in_page(page *page, key key, int *return_pos) {
+  if (!page || !page->rrn) {
+    puts("!!Error: no page or page rrn");
     return ERROR;
+  }
 
   for (int i = 0; i < ORDER - 1; i++) {
     if (memcmp(page->keys[i].id, key.id, TAMANHO_PLACA) == 0) {
+      puts("@Curr key was found");
       *return_pos = i;
       return FOUND;
     }
     if (memcmp(page->keys[i].id, key.id, TAMANHO_PLACA) < 0) {
-      puts("@Curr key is greater than ");
-      *return_pos = i - 1;
+      printf("page key id: %s\t key id: %s\n", page->keys[i].id, key.id);
+      puts("@Curr key is greater than the new one");
+      *return_pos = (i - 1 <= 0) ? 0 : i - 1;
+      printf("i: %d\n", i);
       return NOT_FOUND;
     }
   }
@@ -132,16 +142,17 @@ u16 search_key(b_tree_buf *b, page *p, key key, u16 *found_pos,
   }
 
   page *temp = p;
-  int pos;
+  int *pos = malloc(sizeof(int));
 
-  int flag = search_in_page(temp, key, &pos);
+  int flag = search_in_page(temp, key, pos);
   if (flag == FOUND) {
-    *found_pos = pos;
+    *found_pos = *pos;
     *return_page = *temp;
     return FOUND;
   }
 
-  temp = load_page(b->io, b->q, temp->children[pos]);
+  temp = load_page(b->io, b->q, temp->children[*pos]);
+  free(pos);
   return search_key(b, temp, key, found_pos, return_page);
 }
 
@@ -201,10 +212,11 @@ void split(page *p, key k, page *r_child, key *promo_key, page *new_page,
 
 } // TODO
 
-u16 insert_key(b_tree_buf *b, page *p, key k, key *promo_key, page *r_child) {
+int insert_key(b_tree_buf *b, page *p, key k, key *promo_key, page *r_child) {
   page *temp;
   key promo;
-  int flag, pos;
+  int flag, *pos;
+  pos = malloc(sizeof(int));
 
   if (!p) {
     *promo_key = k;
@@ -212,20 +224,18 @@ u16 insert_key(b_tree_buf *b, page *p, key k, key *promo_key, page *r_child) {
     return PROMOTION;
   }
 
-  flag = search_in_page(p, k, &pos);
+  flag = search_in_page(p, k, pos);
   printf("flag from search_key: %d\n", flag);
   if (flag == FOUND) {
     puts("!!Error: key already inserted");
     return ERROR;
   }
-
-  temp = load_page(b->io, b->q, p->children[pos]);
-  flag = insert_key(b, temp, k, &promo, r_child);
-
-  if(flag > 3 || flag < -3) {
-    puts("wtf");
-    exit(-1);
+  
+  if(!promo_key && !r_child) { // TODO 
+    temp = load_page(b->io, b->q, p->children[*pos]);
+    flag = insert_key(b, temp, k, &promo, r_child);
   }
+
   if (flag == NO_PROMOTION || flag == ERROR) {
     puts("!!Error: no promotion or error");
     return flag;
@@ -234,18 +244,20 @@ u16 insert_key(b_tree_buf *b, page *p, key k, key *promo_key, page *r_child) {
   if (p->child_number < ORDER - 1) {
     if (DEBUG)
       puts("@Free space on page. Inserting..");
-    insert_in_page(p, promo, r_child, pos);
+    insert_in_page(p, promo, r_child, *pos);
+    write_index_record(b->io, p);
     return NO_PROMOTION;
   }
 
   key new_promo_key;
   page *new_page = alloc_page();
-  split(p, promo, r_child, &new_promo_key, new_page, pos);
+  split(p, promo, r_child, &new_promo_key, new_page, *pos);
   *promo_key = new_promo_key;
   r_child = new_page;
 
   if (DEBUG)
     puts("@Inserted");
+  free(pos);
   return PROMOTION;
 }
 
@@ -356,6 +368,12 @@ void read_index_header(io_buf *io) {
     printf("-->index_header: root_rrn: %hu page_size: %hu free rrn list %s\n",
            io->br->root_rrn, io->br->page_size, io->br->free_rrn_address);
   }
+}
+
+void write_index_record(io_buf *io, page *p) {
+  print_page(p);
+  puts("VAI CORINTHIANS");
+
 }
 
 void create_index_file(io_buf *io, char *file_name) {

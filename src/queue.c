@@ -84,7 +84,7 @@ void push_page(queue *queue, page *page) {
 }
 
 page *pop_page(queue *queue) {
-    if(!queue || !queue->next) {
+    if(!queue ) {
         puts("!!Error: NULL or Empty queue pointer");
         return NULL;
     }
@@ -102,10 +102,11 @@ page *pop_page(queue *queue) {
 }
 
 page *queue_search(queue *queue, u16 rrn) {
-    if(!queue || !queue->next) {
+    if(!queue) {
         puts("!!Error: NULL or Empty queue pointer");
         return NULL;
     }
+
     struct queue *temp = queue;
     while (temp->next != NULL && temp->page->rrn != rrn) {
         temp = temp->next;
