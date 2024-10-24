@@ -1,4 +1,5 @@
 #include "queue.h"
+#include "b-tree-buf.h"
 
 queue *alloc_queue() {
     queue* root = malloc(sizeof(queue));
@@ -55,8 +56,8 @@ void print_queue(queue *queue) {
     printf("\n");
 }
 
-void push_page(queue *queue, page *page) {
-    if(!queue) {
+void push_page(b_tree_buf *b, page *page) {
+    if(!b->q) {
         puts("!!Error: NULL queue pointer");
         return;
     }
@@ -67,37 +68,38 @@ void push_page(queue *queue, page *page) {
         return;
     }
 
-    if(queue->counter >= P) 
-        pop_page(queue);
+    if(b->q->counter >= P) 
+        pop_page(b);
 
     new_node->page = page;
     new_node->next = NULL;
-    struct queue *temp = queue;
+    struct queue *temp = b->q;
     while (temp->next != NULL) {
         temp = temp->next;
     }
     temp->next = new_node;
-    queue->counter++;
+    b->q->counter++;
 
     if(DEBUG)
         puts("@Pushed on queue");
 }
 
-page *pop_page(queue *queue) {
-    if(!queue ) {
+page *pop_page(b_tree_buf *b) {
+    if(!b->q) {
         puts("!!Error: NULL or Empty queue pointer");
         return NULL;
     }
 
-    struct queue *free_q = queue->next;
+    struct queue *free_q = b->q->next;
     page *page = free_q->page;
 
-    queue->next = free_q->next;
+    b->q->next = free_q->next;
 
     free(free_q);
-    queue->counter--;
+    b->q->counter--;
     if(DEBUG)
         puts("@Popped from queue");
+    write_index_record(b->io, page);
     return page;
 }
 

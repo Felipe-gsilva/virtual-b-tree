@@ -1,5 +1,5 @@
 #include "b-tree-buf.h"
-#include "i_list.h"
+#include "free_rrn_list.h"
 #include "io-buf.h"
 #include "queue.h"
 
@@ -56,48 +56,83 @@ void build_tree(b_tree_buf *b, io_buf *data, int n) {
   for (int i = 0; i < 3; i++) {
     d = *read_data_record(data, i);
     print_data_record(&d);
-    insert(b, data, &d, i);
+    b_insert(b, data, &d, i);
   }
   if (DEBUG)
     puts("@Built tree");
 }
 
-page *load_page(io_buf *io, queue *q, u16 rrn) {
-  if (!io) {
+page *load_page(b_tree_buf *b, u16 rrn) {
+  if (!b->io) {
     puts("!!Error while loading page");
     return NULL;
   }
 
-  page *q_page = queue_search(q, rrn);
+  page *q_page = queue_search(b->q, rrn);
   if (q_page != NULL) {
     if (DEBUG)
       puts("@Page found on queue");
     return q_page;
   }
 
-  int byte_offset = (rrn * io->br->page_size) + io->br->size;
-  if (fseek(io->fp, byte_offset, SEEK_SET)) {
+  int byte_offset = (rrn * b->io->br->page_size) + b->io->br->size;
+  if (fseek(b->io->fp, byte_offset, SEEK_SET)) {
     puts("!!Error: could not fseek");
     return NULL;
   }
 
   page *page = alloc_page();
-  fread(page, io->br->page_size, 1, io->fp);
+  fread(page, b->io->br->page_size, 1, b->io->fp);
 
   if (page)
-    push_page(q, page);
+    push_page(b, page);
 
   return page;
 }
 
-page *search(b_tree_buf *b, const char *s) {
+void write_root_rrn(b_tree_buf *b, u16 rrn) {
+  if (!b) {
+    puts("!!Error: NULL b_tree_buf");
+    exit(-1);
+  }
+  if (b->root->rrn == rrn) {
+    puts("@RRN already refers to root");
+    return;
+  }
+
+  page *temp = load_page(b, rrn);
+  if (!temp) {
+    puts("!!Error: page to be inserted do not exists");
+    return;
+  }
+  int byte_offset = sizeof(u16) * 2;
+  fseek(b->io->fp, byte_offset, SEEK_SET);
+  int flag = fwrite(&temp->rrn, sizeof(u16), 1, b->io->fp);
+  if (flag) {
+    puts("!!Error: Could not update root rrn");
+    exit(-1);
+  }
+}
+
+void b_traverse(b_tree_buf *b, page *p) {
+  int i;
+  for (i = 0; i < ORDER - 1; i++) {
+    if (p->leaf == false)
+      b_traverse(b, load_page(b, p->children[i]));
+    printf("CHAVES: %s", p->keys[i].id);
+  }
+  if (p->leaf == false)
+    b_traverse(b, load_page(b, p->children[i]));
+}
+
+page *b_search(b_tree_buf *b, const char *s) {
   u16 *pos = malloc(sizeof(u16));
   page *return_page;
   key key;
   strcpy(key.id, s);
 
   int flag = search_key(b, b->root, key, pos, return_page);
-  if (flag == FOUND){
+  if (flag == FOUND) {
     free(pos);
     return return_page;
   }
@@ -112,13 +147,14 @@ int search_in_page(page *page, key key, int *return_pos) {
     return ERROR;
   }
 
+
   for (int i = 0; i < ORDER - 1; i++) {
     if (memcmp(page->keys[i].id, key.id, TAMANHO_PLACA) == 0) {
       puts("@Curr key was found");
       *return_pos = i;
       return FOUND;
     }
-    if (memcmp(page->keys[i].id, key.id, TAMANHO_PLACA) < 0) {
+    if (memcmp(page->keys[i].id, key.id, TAMANHO_PLACA) > 0) {
       printf("page key id: %s\t key id: %s\n", page->keys[i].id, key.id);
       puts("@Curr key is greater than the new one");
       *return_pos = (i - 1 <= 0) ? 0 : i - 1;
@@ -142,81 +178,126 @@ u16 search_key(b_tree_buf *b, page *p, key key, u16 *found_pos,
   }
 
   page *temp = p;
-  int *pos = malloc(sizeof(int));
+  int pos;
 
-  int flag = search_in_page(temp, key, pos);
+  int flag = search_in_page(temp, key, &pos);
   if (flag == FOUND) {
-    *found_pos = *pos;
+    *found_pos = pos;
     *return_page = *temp;
     return FOUND;
   }
 
-  temp = load_page(b->io, b->q, temp->children[*pos]);
-  free(pos);
+  temp = load_page(b, temp->children[pos]);
   return search_key(b, temp, key, found_pos, return_page);
 }
 
 void populate_key(key *k, data_record *d, u16 rrn) {
+  if(!k || !d) {
+    puts("!!Error: NULL key and data record");
+    return;
+  }
   memcpy(k->id, d->placa, TAMANHO_PLACA);
   k->data_register_rrn = rrn;
 }
 
-void insert(b_tree_buf *b, io_buf *data, data_record *d, u16 rrn) {
+void b_insert(b_tree_buf *b, io_buf *data, data_record *d, u16 rrn) {
   key k;
   key *return_key = malloc(sizeof(key));
-  page *return_page = malloc(sizeof(page));
-
+  if (return_key == NULL) {
+    perror("Failed to allocate memory for return_key");
+    exit(EXIT_FAILURE);
+  }
+  
+  page *return_page = NULL;
+  
   populate_key(&k, d, rrn);
-  int flag = insert_key(b, b->root, k, return_key, return_page);
+  int flag = insert_key(b, b->root, k, return_key, &return_page);  
+  
   if (flag == PROMOTION) {
     if (DEBUG) {
       puts("@New root creation triggered by promotion");
     }
-
     page *new_root = alloc_page();
+    if (new_root == NULL) {
+      perror("Failed to allocate memory for new_root");
+      exit(EXIT_FAILURE);
+    }
     new_root->keys[0] = *return_key;
     new_root->children[0] = b->root->rrn;
     new_root->children[1] = return_page->rrn;
     new_root->child_number = 2;
+    new_root->rrn = get_free_rrn(b->i);
     b->root = new_root;
+    write_root_rrn(b, b->root->rrn);
   }
-
+  
   free(return_key);
-  free(return_page);
 }
+
 
 void insert_in_page(page *p, key k, page *r_child, int pos) {
   if (!p) {
     puts("!!Error: page NULL");
     return;
   }
-
-  for (int i = p->child_number - 1; i >= pos; i--)
+  for (int i = p->child_number - 1; i >= pos; i--) {
     p->keys[i + 1] = p->keys[i];
+  }
 
   p->keys[pos] = k;
-
   for (int i = p->child_number; i >= pos + 1; i--) {
     p->children[i + 1] = p->children[i];
   }
 
   if (r_child) {
     p->children[pos + 1] = r_child->rrn;
-    p->child_number += 1;
   }
+
+  p->child_number += 1;
+}
+void split(b_tree_buf *b, page *p, key k, page *r_child, key *promo_key, page *new_page, int pos) {
+    int m = (ORDER - 1) / 2;
+    
+    key temp_keys[ORDER];
+    int temp_children[ORDER + 1];
+
+    for (int i = 0, j = 0; i < p->child_number; i++, j++) {
+        if (j == pos) {
+            temp_keys[j] = k; 
+            temp_children[j + 1] = r_child ? r_child->rrn : p->children[j + 1]; 
+            j++; 
+        }
+        temp_keys[j] = p->keys[i];
+        temp_children[j] = p->children[i];
+    }
+
+    temp_children[pos + 1] = r_child ? r_child->rrn : p->children[pos + 1];
+    *promo_key = temp_keys[m];
+
+    p->child_number = m;
+    for (int i = 0; i < m; i++) {
+        p->keys[i] = temp_keys[i];
+        p->children[i] = temp_children[i];
+    }
+    p->children[m] = temp_children[m];
+
+    new_page->child_number = ORDER - 1 - m;
+    for (int i = 0; i < new_page->child_number; i++) {
+        new_page->keys[i] = temp_keys[m + 1 + i];
+        new_page->children[i] = temp_children[m + 1 + i];
+    }
+
+    new_page->children[new_page->child_number] = temp_children[ORDER];
+    new_page->rrn = get_free_rrn(b->i); 
+
+    write_index_record(b->io, p);
+    write_index_record(b->io, new_page);
 }
 
-void split(page *p, key k, page *r_child, key *promo_key, page *new_page,
-           int pos) {
-
-
-} // TODO
-
-int insert_key(b_tree_buf *b, page *p, key k, key *promo_key, page *r_child) {
+int insert_key(b_tree_buf *b, page *p, key k, key *promo_key, page **r_child) {
   page *temp;
   key promo;
-  int flag, *pos;
-  pos = malloc(sizeof(int));
+  int flag, pos;
 
   if (!p) {
     *promo_key = k;
@@ -224,40 +305,37 @@ int insert_key(b_tree_buf *b, page *p, key k, key *promo_key, page *r_child) {
     return PROMOTION;
   }
 
-  flag = search_in_page(p, k, pos);
-  printf("flag from search_key: %d\n", flag);
+  flag = search_in_page(p, k, &pos);
   if (flag == FOUND) {
     puts("!!Error: key already inserted");
     return ERROR;
   }
-  
-  if(!promo_key && !r_child) { // TODO 
-    temp = load_page(b->io, b->q, p->children[*pos]);
-    flag = insert_key(b, temp, k, &promo, r_child);
-  }
 
-  if (flag == NO_PROMOTION || flag == ERROR) {
-    puts("!!Error: no promotion or error");
+  temp = load_page(b, p->children[pos]);
+  flag = insert_key(b, temp, k, &promo, r_child);
+
+  if (flag == ERROR) {
+    puts("!!Error occurred");
     return flag;
   }
 
   if (p->child_number < ORDER - 1) {
+    *r_child = malloc(sizeof(page));
     if (DEBUG)
       puts("@Free space on page. Inserting..");
-    insert_in_page(p, promo, r_child, *pos);
+    insert_in_page(p, promo, *r_child, pos);
     write_index_record(b->io, p);
     return NO_PROMOTION;
   }
 
   key new_promo_key;
   page *new_page = alloc_page();
-  split(p, promo, r_child, &new_promo_key, new_page, *pos);
+  split(b, p, promo, *r_child, &new_promo_key, new_page, pos);
   *promo_key = new_promo_key;
-  r_child = new_page;
+  *r_child = new_page;
 
   if (DEBUG)
     puts("@Inserted");
-  free(pos);
   return PROMOTION;
 }
 
@@ -308,7 +386,7 @@ void write_index_header(io_buf *io) {
 
   size_t free_rrn_len = strlen(io->br->free_rrn_address) + 1;
   size_t total_size =
-      sizeof(io->br->root_rrn) + sizeof(io->br->page_size) + free_rrn_len;
+    sizeof(io->br->root_rrn) + sizeof(io->br->page_size) + free_rrn_len;
 
   fseek(io->fp, 0, SEEK_SET);
   int flag = fwrite(&io->br->root_rrn, sizeof(u16), 1, io->fp);
@@ -371,9 +449,14 @@ void read_index_header(io_buf *io) {
 }
 
 void write_index_record(io_buf *io, page *p) {
-  print_page(p);
-  puts("VAI CORINTHIANS");
-
+  if(!io || !p) {
+    puts("!!Error: could not write");
+    exit(-1);
+  }
+  
+  int byte_offset = (io->br->size) + (io->br->page_size) * p->rrn;
+  fseek(io->fp, byte_offset, SEEK_SET);
+  fwrite(p, sizeof(page), 1, io->fp);
 }
 
 void create_index_file(io_buf *io, char *file_name) {
@@ -452,7 +535,7 @@ page *alloc_page() {
 page *new_page(u16 rrn) {
   page *page = alloc_page();
   page->rrn = rrn;
-  if(page)
+  if (page)
     return page;
   puts("!!Error: could not creat a page");
   return NULL;

@@ -1,5 +1,5 @@
-#ifndef _I_LIST
-#define _I_LIST
+#ifndef _FREE_RRN_LIST
+#define _FREE_RRN_LIST
 #include "defines.h"
 
 i_list *alloc_ilist();
@@ -10,6 +10,8 @@ void load_list(i_list *i, char* s);
 
 u16 get_free_rrn(i_list *i);
 
-u16 *load_rrn_list(i_list *i);
+u16 *load_rrns(i_list *i);
+
+void i_insert(i_list *i, u16 rrn); // TODO
 
 #endif

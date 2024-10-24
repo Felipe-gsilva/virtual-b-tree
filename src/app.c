@@ -1,7 +1,7 @@
 #include "app.h"
 #include "io-buf.h"
 #include "b-tree-buf.h"
-#include "i_list.h"
+#include "free_rrn_list.h"
 #include "queue.h"
 
 void print_ascii_art() {
@@ -44,7 +44,7 @@ void cli(app *a) {
       case 0:
         return;
       case 1:
-        p = search(a->b, placa);
+        p = b_search(a->b, placa);
         if(p) {
           print_page(p);
           break;
@@ -58,14 +58,14 @@ void cli(app *a) {
         //update_key(id);
         break;
       case 3:
-        insert(a->b, a->out, d, get_free_rrn(a->b->i));
+        b_insert(a->b, a->data, d, get_free_rrn(a->b->i));
         break;
       case 4:
         printf("Enter ID to remove: ");
         scanf("%s", placa);
         puts("tamanho paia");
         printf("%s", placa);
-        b_remove(a->b, a->out, placa);
+        b_remove(a->b, a->data, placa);
         break;
       case 5: 
         print_queue(a->b->q);
@@ -79,11 +79,11 @@ void cli(app *a) {
 
 app* alloc_app() {
   app* a = malloc(sizeof(app));
-  a->in = alloc_io_buf();
-  a->out = alloc_io_buf();
+  a->idx = alloc_io_buf();
+  a->data = alloc_io_buf();
   a->b = alloc_tree_buf();
   a->b->root = NULL;
-  if (a && a->in && a->out){
+  if (a && a->idx && a->data){
     if(DEBUG)
       puts("@Allocated APP_BUFFER");
     return a;
@@ -94,13 +94,13 @@ app* alloc_app() {
 }
 
 void clear_app(app* app) {
-  if(app->in) {
-    clear_io_buf(app->in);   
-    app->in = NULL;
+  if(app->idx) {
+    clear_io_buf(app->idx);   
+    app->idx = NULL;
   }
-  if(app->out) {
-    clear_io_buf(app->out);
-    app->out = NULL;
+  if(app->data) {
+    clear_io_buf(app->data);
+    app->data = NULL;
   }
   if(app->b) {
     clear_tree_buf(app->b);
@@ -129,18 +129,19 @@ int main(int argc, char **argv) {
   strcpy(data_file, "public/veiculos.dat");
 
   create_index_file(a->b->io, index_file);
-  create_data_file(a->out, data_file);
-
-  load_list(a->b->i, a->b->io->hr->free_rrn_address);
+  create_data_file(a->data, data_file);
 
   load_file(a->b->io, index_file, "index");
-  load_file(a->out, data_file, "data");
+  load_file(a->data, data_file, "data");
+
 
   if(!a->b->io->br->root_rrn) {
     page *p = new_page(0);
     a->b->root = p;
     print_page(a->b->root);
-    build_tree(a->b, a->out, 99);
+    write_index_record(a->b->io, a->b->root); // TODO not working
+    build_tree(a->b, a->data, 99);
+    print_queue(a->b->q);
   }
 
   cli(a); 

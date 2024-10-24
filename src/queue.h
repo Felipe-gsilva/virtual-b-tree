@@ -12,9 +12,9 @@ void clear_queue(queue *queue);
 
 void print_queue(queue *queue);
 
-void push_page(queue *queue, page *page);
+void push_page(b_tree_buf *b, page *page);
 
-page *pop_page(queue *queue);
+page *pop_page(b_tree_buf *b);
 
 page *queue_search(queue *queue, u16 rrn);
 

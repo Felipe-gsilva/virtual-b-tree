@@ -11,7 +11,7 @@
 #define DEBUG 1 // 1 for dev mode, 0 for prod mode
 #define ORDER 3
 
-#define check puts("Breakdown here");
+#define check puts("Breakdown here")
 // in bytes
 #define MAX_ADDRESS 4096
 
@@ -21,11 +21,6 @@
 #define TAMANHO_MARCA 20
 #define TAMANHO_CATEGORIA 15
 #define TAMANHO_STATUS 16
-
-// status carro
-#define DISPONIVEL "disponivel"
-#define ALUGADO "alugado"
-#define MANUTENCAO "em manutencao"
 
 typedef uint8_t u8;
 typedef uint16_t u16;
@@ -76,7 +71,7 @@ struct data_record {
   int ano;
   char categoria[TAMANHO_CATEGORIA];
   int quilometragem;
-  char status[TAMANHO_STATUS]; // Status de Disponibilidade (disponível, alugado, em manutenção)
+  char status[TAMANHO_STATUS];
 };
 
 struct data_header_record {
@@ -113,8 +108,8 @@ struct i_list {
 };
 
 struct app {
-  io_buf *in;
-  io_buf *out;
+  io_buf *idx;
+  io_buf *data;
   b_tree_buf *b;
 };
 

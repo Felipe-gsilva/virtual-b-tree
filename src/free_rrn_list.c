@@ -1,4 +1,4 @@
-#include "i_list.h"
+#include "free_rrn_list.h"
 #include "io-buf.h"
 
 i_list *alloc_ilist() {
@@ -31,6 +31,7 @@ void load_list(i_list *i, char* s) {
     puts("!!Error: empty io buffer on i list");
     return;
   }
+  printf("@Opened rrn helper %s\n", s);
 
   strcpy(i->io->address, s);
   i->io->fp = fopen(i->io->address, "r+b");
