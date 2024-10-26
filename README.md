@@ -8,8 +8,6 @@ You will need cmake:
 
 ``` bash
 
-mkdir target
-cd target
 cmake -S . -B target/
 cmake --build target/
 ./target/VB-TREE
