@@ -29,14 +29,13 @@ void create_list_file(FILE *fp , char *file_name);
 
 void clear_tree_buf(b_tree_buf*b);
 
-
 void write_root_rrn(b_tree_buf *b, u16 rrn);
 
 void b_traverse(b_tree_buf *b, page *p);
 
 page *b_search(b_tree_buf *b, const char *s);
 
-u16 search_key(b_tree_buf *b, page *p, key key, u16 *found_pos, page *return_page);
+u16 search_key(b_tree_buf *b, page *p, key key, u16 *found_pos, page **return_page);
 
 int search_in_page(page *page, key key, int *return_pos);
 
@@ -50,7 +49,7 @@ page *load_page(b_tree_buf *b, u16 rrn);
 
 void populate_tree_header(index_header_record *bh, char *file_name);
 
-void read_index_header(io_buf *io);
+void load_index_header(io_buf *io);
 
 void write_index_header(io_buf *io);
 

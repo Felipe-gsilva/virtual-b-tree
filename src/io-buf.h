@@ -11,9 +11,9 @@ void load_file(io_buf *io, char *file_name, const char *type);
 
 void create_data_file(io_buf *io, char *file_name);
 
-void read_data_header(io_buf *io);
+void load_data_header(io_buf *io);
 
-data_record *read_data_record(io_buf *io, u16 rrn);
+data_record *load_data_record(io_buf *io, u16 rrn);
 
 void populate_header(data_header_record *hp, const char *file_name);
 

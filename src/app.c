@@ -82,7 +82,6 @@ app* alloc_app() {
   a->idx = alloc_io_buf();
   a->data = alloc_io_buf();
   a->b = alloc_tree_buf();
-  a->b->root = NULL;
   if (a && a->idx && a->data){
     if(DEBUG)
       puts("@Allocated APP_BUFFER");
@@ -131,15 +130,18 @@ int main(int argc, char **argv) {
   create_index_file(a->b->io, index_file);
   create_data_file(a->data, data_file);
 
-  load_file(a->b->io, index_file, "index");
+  load_file(a->idx, index_file, "index");
   load_file(a->data, data_file, "data");
 
+  load_list(a->b->i, a->b->io->br->free_rrn_address);
 
-  if(!a->b->io->br->root_rrn) {
-    page *p = new_page(0);
-    a->b->root = p;
-    print_page(a->b->root);
-    write_index_record(a->b->io, a->b->root); // TODO not working
+
+  a->b->root  = load_page(a->b, a->b->io->br->root_rrn);
+  page *temp = load_page(a->b, a->b->io->br->root_rrn);
+
+  page *p = b_search(a->b, "GIA5915");
+  print_page(p);
+  if((temp != NULL && temp->child_number < 1) || !a->b->io->br->root_rrn) {
     build_tree(a->b, a->data, 99);
     print_queue(a->b->q);
   }

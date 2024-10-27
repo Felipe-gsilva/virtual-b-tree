@@ -32,54 +32,59 @@ io_buf *alloc_io_buf() {
   return io;
 }
 
-void read_data_header(io_buf *io) {
-  if (!io || !io->fp) {
-    puts("!!Invalid IO buffer or file pointer");
-    return;
-  }
-
-  data_header_record temp_hr;
-  fseek(io->fp, 0, SEEK_SET);
-  size_t t = fread(&temp_hr, sizeof(temp_hr.size) + sizeof(temp_hr.record_size),
-                   1, io->fp);
-  if (t != 1) {
-    puts("!!Error while reading header record (fixed part)");
-    return;
-  }
-
-  if (!io->hr) {
-    io->hr = malloc(sizeof(data_header_record));
-    if (!io->hr) {
-      puts("!!Memory allocation error");
-      return;
+void load_data_header(io_buf *io) {
+    if (!io || !io->fp) {
+        puts("!!Invalid IO buffer or file pointer");
+        return;
     }
-  }
 
-  io->hr->record_size = temp_hr.record_size;
-  io->hr->size = temp_hr.size;
+    data_header_record temp_hr = {0}; 
+    
+    fseek(io->fp, 0, SEEK_SET);
+    if (fread(&temp_hr.size, sizeof(u16), 1, io->fp) != 1 ||
+        fread(&temp_hr.record_size, sizeof(u16), 1, io->fp) != 1) {
+        puts("!!Error while reading header record (fixed part)");
+        return;
+    }
 
-  size_t rrn_len = io->hr->size - (2 * sizeof(u16));
-  io->hr->free_rrn_address = malloc(rrn_len);
-  if (!io->hr->free_rrn_address) {
-    puts("!!Memory allocation error for free_rrn_address");
-    return;
-  }
+    printf("Header size: %hu \t Record size: %hu\n", temp_hr.size, temp_hr.record_size);
 
-  t = fread(temp_hr.free_rrn_address, rrn_len, 1, io->fp);
-  if (t != 1) {
-    puts("!!Error while reading free_rrn_address");
-    return;
-  }
+    if (!io->hr) {
+        io->hr = malloc(sizeof(data_header_record));
+        if (!io->hr) {
+            puts("!!Memory allocation error");
+            return;
+        }
+    }
 
-  strcpy(io->hr->free_rrn_address, temp_hr.free_rrn_address);
+    io->hr->record_size = temp_hr.record_size;
+    io->hr->size = temp_hr.size;
 
-  if (DEBUG) {
-    printf("--> data_header: record_size: %hu size: %hu free_rrn_address: %s\n",
-           io->hr->record_size, io->hr->size, io->hr->free_rrn_address);
-  }
+    size_t rrn_len = io->hr->size - (2 * sizeof(u16)) - 1;
+    
+    io->hr->free_rrn_address = malloc(rrn_len + 1);  
+    if (!io->hr->free_rrn_address) {
+        puts("!!Memory allocation error for free_rrn_address");
+        return;
+    }
+
+    fseek(io->fp, sizeof(u16) * 2, SEEK_SET);
+    if (fread(io->hr->free_rrn_address, rrn_len, 1, io->fp) != 1) {
+        puts("!!Error while reading free_rrn_address");
+        free(io->hr->free_rrn_address);
+        io->hr->free_rrn_address = NULL;
+        return;
+    }
+    io->hr->free_rrn_address[rrn_len] = '\0';  
+
+    if (DEBUG) {
+        printf("--> data_header: record_size: %hu size: %hu free_rrn_address: %s\n",
+               io->hr->record_size, io->hr->size, io->hr->free_rrn_address);
+    }
 }
 
 void print_data_record(data_record *hr) {
+  puts("\n--------DATA RECORD--------");
   printf("Placa: %s\n", hr->placa);
   printf("Modelo: %s\n", hr->modelo);
   printf("Marca: %s\n", hr->marca);
@@ -87,10 +92,10 @@ void print_data_record(data_record *hr) {
   printf("Categoria: %s\n", hr->categoria);
   printf("Quilometragem: %d\n", hr->quilometragem);
   printf("Status: %s\n", hr->status);
-  printf("---------------------------\n");
+  puts("---------------------------\n");
 }
 
-data_record *read_data_record(io_buf *io, u16 rrn) {
+data_record *load_data_record(io_buf *io, u16 rrn) {
   if (!io || !io->fp) {
     puts("!!Invalid IO buffer or file pointer");
     return NULL;
@@ -250,8 +255,12 @@ void load_file(io_buf *io, char *file_name, const char *type) {
         return;
       }
     }
-    read_index_header(io);
-  } else if (strcmp(type, "data") == 0) {
+    load_index_header(io);
+    if(!io->br || !io->hr)
+      exit(-1);
+  } 
+
+  if (strcmp(type, "data") == 0) {
     if (io->hr == NULL) {
       io->hr = malloc(sizeof(data_header_record));
       if (io->hr == NULL) {
@@ -260,7 +269,7 @@ void load_file(io_buf *io, char *file_name, const char *type) {
         return;
       }
     }
-    read_data_header(io);
+    load_data_header(io);
   } else {
     puts("!!Invalid file type");
     fclose(io->fp);
@@ -325,7 +334,7 @@ void create_data_file(io_buf *io, char *file_name) {
         return;
       }
     }
-    read_data_header(io);
+    load_data_header(io);
 
     if (io->hr->record_size != sizeof(data_record) || io->hr->size < 0 ||
         io->hr->size > MAX_ADDRESS + 4 ||
