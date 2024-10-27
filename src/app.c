@@ -121,6 +121,7 @@ int main(int argc, char **argv) {
   char converted_char;
 
   a = alloc_app();
+
   strcpy(index_file, "public/btree-");
   converted_char = ORDER + '0';
   index_file[13] = converted_char;
@@ -136,11 +137,7 @@ int main(int argc, char **argv) {
   load_list(a->b->i, a->b->io->br->free_rrn_address);
 
 
-  a->b->root  = load_page(a->b, a->b->io->br->root_rrn);
   page *temp = load_page(a->b, a->b->io->br->root_rrn);
-
-  page *p = b_search(a->b, "GIA5915");
-  print_page(p);
   if((temp != NULL && temp->child_number < 1) || !a->b->io->br->root_rrn) {
     build_tree(a->b, a->data, 99);
     print_queue(a->b->q);

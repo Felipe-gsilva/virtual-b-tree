@@ -3,11 +3,7 @@
 
 #include "defines.h"
 
-#define ERROR -1
-#define NOT_FOUND -1
-#define FOUND 1
-#define PROMOTION 2
-#define NO_PROMOTION 3
+
 
 b_tree_buf *alloc_tree_buf();
 
@@ -15,13 +11,13 @@ void build_tree(b_tree_buf *b, io_buf *data, int n);
 
 void populate_key(key *k,data_record *d, u16 rrn);
 
-void b_insert(b_tree_buf *b,io_buf *data,  data_record *d, u16 rrn);
+btree_status b_insert(b_tree_buf *b, io_buf *data, data_record *d, u16 rrn);
 
-int insert_key(b_tree_buf *b, page *p, key k, key *promo_key, page **r_child);
+btree_status insert_key(b_tree_buf *b, page *p, key k, key *promo_key, page **r_child);
 
-void split(b_tree_buf *b, page *p, key k, page *r_child, key *promo_key, page *new_page, int pos);
+btree_status split(b_tree_buf *b, page *p, key k, page *r_child, key *promo_key, page *new_page, int pos);
 
-void insert_in_page(page *p, key k, page *r_child, int pos);
+btree_status insert_in_page(page *p, key k, page *r_child, int pos);
 
 void create_index_file(io_buf *io, char *file_name);
 
@@ -29,7 +25,7 @@ void create_list_file(FILE *fp , char *file_name);
 
 void clear_tree_buf(b_tree_buf*b);
 
-void write_root_rrn(b_tree_buf *b, u16 rrn);
+int write_root_rrn(b_tree_buf *b, u16 rrn);
 
 void b_traverse(b_tree_buf *b, page *p);
 
@@ -51,9 +47,9 @@ void populate_tree_header(index_header_record *bh, char *file_name);
 
 void load_index_header(io_buf *io);
 
-void write_index_header(io_buf *io);
+int write_index_header(io_buf *io);
 
-void write_index_record(io_buf *io, page *p);
+int write_index_record(io_buf *io, page *p);
 
 page *alloc_page();
 

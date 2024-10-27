@@ -60,7 +60,7 @@ void load_data_header(io_buf *io) {
     io->hr->record_size = temp_hr.record_size;
     io->hr->size = temp_hr.size;
 
-    size_t rrn_len = io->hr->size - (2 * sizeof(u16)) - 1;
+    size_t rrn_len = io->hr->size - (2 * sizeof(u16));
     
     io->hr->free_rrn_address = malloc(rrn_len + 1);  
     if (!io->hr->free_rrn_address) {

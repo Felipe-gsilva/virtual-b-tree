@@ -32,6 +32,19 @@ typedef int16_t i16;
 typedef int32_t i32;
 typedef int64_t i64;
 
+typedef enum {
+  BTREE_NOT_FOUND_KEY = 3,
+  BTREE_FOUND_KEY = 2,
+  BTREE_PROMOTION = 1,
+  BTREE_NO_PROMOTION = 0,
+  BTREE_SUCCESS = 0,
+  BTREE_ERROR_MEMORY = -1,
+  BTREE_ERROR_IO = -2,
+  BTREE_ERROR_DUPLICATE = -3,
+  BTREE_ERROR_INVALID_PAGE = -4
+
+} btree_status;
+
 typedef struct index_header_record index_header_record;
 typedef struct data_header_record data_header_record;
 typedef struct b_tree_buf b_tree_buf;
@@ -51,7 +64,7 @@ struct key {
 
 struct page {
   u16 rrn;
-  key keys[ORDER-1];
+  key keys[ORDER - 1];
   u16 children[ORDER];
   u8 child_number;
   u16 father;
