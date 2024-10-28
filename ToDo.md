@@ -1,4 +1,6 @@
-- [ ] fix opening file and creation
+NOT INSERTING CORRECTLY BUT I CANT UNDERSTAND WHY
+
+- [x] fix opening file and creation
 
 - [x] add io_buf ops
 

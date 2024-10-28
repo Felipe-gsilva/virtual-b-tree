@@ -33,6 +33,7 @@ typedef int32_t i32;
 typedef int64_t i64;
 
 typedef enum {
+  BTREE_INSERTED_IN_PAGE = 5,
   BTREE_NOT_FOUND_KEY = 3,
   BTREE_FOUND_KEY = 2,
   BTREE_PROMOTION = 1,
@@ -42,8 +43,12 @@ typedef enum {
   BTREE_ERROR_IO = -2,
   BTREE_ERROR_DUPLICATE = -3,
   BTREE_ERROR_INVALID_PAGE = -4
-
 } btree_status;
+
+typedef enum {  // not integrated yet
+  IO_SUCCESS = 0,
+  IO_ERROR = -1
+} io_status;
 
 typedef struct index_header_record index_header_record;
 typedef struct data_header_record data_header_record;
@@ -55,7 +60,7 @@ typedef struct queue queue;
 typedef struct key key;
 typedef struct page page;
 typedef struct app app;
-typedef struct i_list i_list;
+typedef struct free_rrn_list free_rrn_list;
 
 struct key {
   u16 data_register_rrn;
@@ -88,7 +93,7 @@ struct data_record {
 };
 
 struct data_header_record {
-  u16 size;
+  u16 header_size;
   u16 record_size;
   char *free_rrn_address;
 };
@@ -96,7 +101,7 @@ struct data_header_record {
 struct index_header_record {
   u16 root_rrn;
   u16 page_size;
-  u16 size;
+  u16 header_size;
   char *free_rrn_address;
 };
 
@@ -111,10 +116,10 @@ struct b_tree_buf {
   page *root;
   io_buf *io;
   queue *q;
-  i_list *i;
+  free_rrn_list *i;
 };
 
-struct i_list {
+struct free_rrn_list {
   io_buf *io;
   u16 *free_rrn;
   u16 n;

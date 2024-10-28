@@ -41,13 +41,13 @@ void load_data_header(io_buf *io) {
     data_header_record temp_hr = {0}; 
     
     fseek(io->fp, 0, SEEK_SET);
-    if (fread(&temp_hr.size, sizeof(u16), 1, io->fp) != 1 ||
+    if (fread(&temp_hr.header_size, sizeof(u16), 1, io->fp) != 1 ||
         fread(&temp_hr.record_size, sizeof(u16), 1, io->fp) != 1) {
         puts("!!Error while reading header record (fixed part)");
         return;
     }
 
-    printf("Header size: %hu \t Record size: %hu\n", temp_hr.size, temp_hr.record_size);
+    printf("Header.header_size: %hu \t Record size: %hu\n", temp_hr.header_size, temp_hr.record_size);
 
     if (!io->hr) {
         io->hr = malloc(sizeof(data_header_record));
@@ -58,9 +58,9 @@ void load_data_header(io_buf *io) {
     }
 
     io->hr->record_size = temp_hr.record_size;
-    io->hr->size = temp_hr.size;
+    io->hr->header_size = temp_hr.header_size;
 
-    size_t rrn_len = io->hr->size - (2 * sizeof(u16));
+    size_t rrn_len = io->hr->header_size - (2 * sizeof(u16));
     
     io->hr->free_rrn_address = malloc(rrn_len + 1);  
     if (!io->hr->free_rrn_address) {
@@ -79,7 +79,7 @@ void load_data_header(io_buf *io) {
 
     if (DEBUG) {
         printf("--> data_header: record_size: %hu size: %hu free_rrn_address: %s\n",
-               io->hr->record_size, io->hr->size, io->hr->free_rrn_address);
+               io->hr->record_size, io->hr->header_size, io->hr->free_rrn_address);
     }
 }
 
@@ -107,9 +107,9 @@ data_record *load_data_record(io_buf *io, u16 rrn) {
     return NULL;
   }
 
-  int byte_offset = io->hr->size + (io->hr->record_size * rrn);
+  int byte_offset = io->hr->header_size + (io->hr->record_size * rrn);
   printf("Header size: %d, Record size: %d, RRN: %d, byte_offset: %d\n",
-         io->hr->size, io->hr->record_size, rrn, byte_offset);
+         io->hr->header_size, io->hr->record_size, rrn, byte_offset);
 
   if (fseek(io->fp, byte_offset, SEEK_SET) != 0) {
     puts("!!Error seeking to byte offset");
@@ -135,8 +135,8 @@ void prepend_data_header(io_buf *io) {
   size_t free_rrn_len = strlen(io->hr->free_rrn_address) + 1,
          header_size = sizeof(u16) * 2 + free_rrn_len;
 
-  if (io->hr->size != header_size) {
-    io->hr->size = header_size;
+  if (io->hr->header_size != header_size) {
+    io->hr->header_size = header_size;
   }
 
   fseek(io->fp, 0, SEEK_END);
@@ -174,7 +174,7 @@ void prepend_data_header(io_buf *io) {
 
   printf("free rrn address: %s\n", io->hr->free_rrn_address);
   fseek(io->fp, 0, SEEK_SET);
-  if (fwrite(&io->hr->size, sizeof(u16), 1, io->fp) != 1 ||
+  if (fwrite(&io->hr->header_size, sizeof(u16), 1, io->fp) != 1 ||
       fwrite(&io->hr->record_size, sizeof(u16), 1, io->fp) != 1 ||
       fwrite(io->hr->free_rrn_address, free_rrn_len, 1, io->fp) != 1) {
     puts("!!Error writing header to file");
@@ -192,7 +192,7 @@ void prepend_data_header(io_buf *io) {
 
   if (DEBUG)
     printf("@Successfully written header: %hu %hu %s\n", io->hr->record_size,
-           io->hr->size, io->hr->free_rrn_address);
+           io->hr->header_size, io->hr->free_rrn_address);
 }
 
 void write_data_record(io_buf *io, data_record *d, u16 rrn) {
@@ -201,7 +201,7 @@ void write_data_record(io_buf *io, data_record *d, u16 rrn) {
     return;
   }
 
-  int byte_offset = io->hr->size + (io->hr->record_size * rrn);
+  int byte_offset = io->hr->header_size + (io->hr->record_size * rrn);
   fseek(io->fp, byte_offset, SEEK_SET);
   size_t t = fwrite(d, sizeof(data_record), 1, io->fp);
   if (t != 1) {
@@ -218,7 +218,7 @@ void populate_header(data_header_record *hp, const char *file_name) {
   hp->record_size = sizeof(data_record);
   strcpy(hp->free_rrn_address, file_name);
   hp->free_rrn_address[strlen(file_name) + 1] = '\0';
-  hp->size = strlen(file_name) + 1 + sizeof(u16) * 2;
+  hp->header_size = strlen(file_name) + 1 + sizeof(u16) * 2;
 }
 
 void load_file(io_buf *io, char *file_name, const char *type) {
@@ -270,14 +270,9 @@ void load_file(io_buf *io, char *file_name, const char *type) {
       }
     }
     load_data_header(io);
-  } else {
-    puts("!!Invalid file type");
-    fclose(io->fp);
-    return;
   }
-
   if (strcmp(type, "data") == 0 &&
-      (io->hr->record_size == 0 || io->hr->size == 0)) {
+      (io->hr->record_size == 0 || io->hr->header_size == 0)) {
     puts("!!Error: one or more inputs in data_header_record are 0");
     fclose(io->fp);
     return;
@@ -336,8 +331,8 @@ void create_data_file(io_buf *io, char *file_name) {
     }
     load_data_header(io);
 
-    if (io->hr->record_size != sizeof(data_record) || io->hr->size < 0 ||
-        io->hr->size > MAX_ADDRESS + 4 ||
+    if (io->hr->record_size != sizeof(data_record) || io->hr->header_size < 0 ||
+        io->hr->header_size > MAX_ADDRESS + 4 ||
         strcmp(io->hr->free_rrn_address, list_name) != 0) {
       prepend = 1;
       populate_header(io->hr, list_name);

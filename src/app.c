@@ -1,26 +1,42 @@
 #include "app.h"
-#include "io-buf.h"
 #include "b-tree-buf.h"
 #include "free_rrn_list.h"
+#include "io-buf.h"
 #include "queue.h"
 
 void print_ascii_art() {
-  printf("                                         ,----,                                \n");
-  printf("                                       ,/   .`|                                \n");
-  printf("                ,---,.               ,`   .'  :,-.----.       ,---,.    ,---,. \n");
-  printf("       ,---.  ,'  .'  \\            ;    ;     /\\    /  \\    ,'  .' |  ,'  .' | \n");
-  printf("      /__./|,---.' .' |    ,---,..'___,/    ,' ;   :    \\ ,---.'   |,---.'   | \n");
-  printf(" ,---.;  ; ||   |  |: |  ,'  .' ||    :     |  |   | .\\ : |   |   .'|   |   .' \n");
-  printf("/___/ \\  | |:   :  :  /,---.'   ,;    |.';  ;  .   : |: | :   :  |-,:   :  |-, \n");
-  printf("\\   ;  \\ ' |:   |    ; |   |    |`----'  |  |  |   |  \\ : :   |  ;/|:   |  ;/| \n");
-  printf(" \\   \\  \\: ||   :     \\:   :  .'     '   :  ;  |   : .  / |   :   .'|   :   .' \n");
-  printf("  ;   \\  ' .|   |   . |:   |.'       |   |  '  ;   | |  \\ |   |  |-,|   |  |-, \n");
-  printf("   \\   \\   ''   :  '; |`---'         '   :  |  |   | ;\\  \\'   :  ;/|'   :  ;/| \n");
-  printf("    \\   `  ;|   |  | ;               ;   |.'   :   ' | \\.|   |    \\|   |    \\ \n");
-  printf("     :   \\ ||   :   /                '---'     :   : :-'  |   :   .'|   :   .' \n");
-  printf("      '---\" |   | ,'                           |   |.'    |   | ,'  |   | ,'   \n");
-  printf("            `----'                             `---'      `----'    `----'     \n");
-  printf("                                                                                \n");
+  printf("                                         ,----,                      "
+         "          \n");
+  printf("                                       ,/   .`|                      "
+         "          \n");
+  printf("                ,---,.               ,`   .'  :,-.----.       ,---,. "
+         "   ,---,. \n");
+  printf("       ,---.  ,'  .'  \\            ;    ;     /\\    /  \\    ,'  "
+         ".' |  ,'  .' | \n");
+  printf("      /__./|,---.' .' |    ,---,..'___,/    ,' ;   :    \\ ,---.'   "
+         "|,---.'   | \n");
+  printf(" ,---.;  ; ||   |  |: |  ,'  .' ||    :     |  |   | .\\ : |   |   "
+         ".'|   |   .' \n");
+  printf("/___/ \\  | |:   :  :  /,---.'   ,;    |.';  ;  .   : |: | :   :  "
+         "|-,:   :  |-, \n");
+  printf("\\   ;  \\ ' |:   |    ; |   |    |`----'  |  |  |   |  \\ : :   |  "
+         ";/|:   |  ;/| \n");
+  printf(" \\   \\  \\: ||   :     \\:   :  .'     '   :  ;  |   : .  / |   :  "
+         " .'|   :   .' \n");
+  printf("  ;   \\  ' .|   |   . |:   |.'       |   |  '  ;   | |  \\ |   |  "
+         "|-,|   |  |-, \n");
+  printf("   \\   \\   ''   :  '; |`---'         '   :  |  |   | ;\\  \\'   :  "
+         ";/|'   :  ;/| \n");
+  printf("    \\   `  ;|   |  | ;               ;   |.'   :   ' | \\.|   |    "
+         "\\|   |    \\ \n");
+  printf("     :   \\ ||   :   /                '---'     :   : :-'  |   :   "
+         ".'|   :   .' \n");
+  printf("      '---\" |   | ,'                           |   |.'    |   | ,'  "
+         "|   | ,'   \n");
+  printf("            `----'                             `---'      `----'    "
+         "`----'     \n");
+  printf("                                                                     "
+         "           \n");
 }
 
 void cli(app *a) {
@@ -30,7 +46,7 @@ void cli(app *a) {
   data_record *d = malloc(sizeof(data_record));
   print_ascii_art();
 
-  while(choice != 0) {
+  while (choice != 0) {
     printf("Choose an option:\n");
     printf("0. Exit\n");
     printf("1. Search by id\n");
@@ -41,49 +57,51 @@ void cli(app *a) {
     scanf("%d", &choice);
 
     switch (choice) {
-      case 0:
-        return;
-      case 1:
-        p = b_search(a->b, placa);
-        if(p) {
-          print_page(p);
-          break;
-        }
-        puts("Page not found!");
+    case 0:
+      return;
+    case 1:
+      puts("Digite a placa");
+      scanf("%s", placa);
+      p = b_search(a->b, placa);
+      if (p) {
+        print_page(p);
         break;
-      case 2:
-        printf("Enter ID to update: ");
-        scanf("%s", placa);
-        printf("%s", placa);
-        //update_key(id);
-        break;
-      case 3:
-        b_insert(a->b, a->data, d, get_free_rrn(a->b->i));
-        break;
-      case 4:
-        printf("Enter ID to remove: ");
-        scanf("%s", placa);
-        puts("tamanho paia");
-        printf("%s", placa);
-        b_remove(a->b, a->data, placa);
-        break;
-      case 5: 
-        print_queue(a->b->q);
-        break;
-      default: 
-        printf("Invalid choice.\n");
-        break;
+      }
+      puts("Page not found!");
+      break;
+    case 2:
+      printf("Enter ID to update: ");
+      scanf("%s", placa);
+      printf("%s", placa);
+      // update_key(id);
+      break;
+    case 3:
+      b_insert(a->b, a->data, d, get_free_rrn(a->b->i));
+      break;
+    case 4:
+      printf("Enter ID to remove: ");
+      scanf("%s", placa);
+      puts("tamanho paia");
+      printf("%s", placa);
+      b_remove(a->b, a->data, placa);
+      break;
+    case 5:
+      print_queue(a->b->q);
+      break;
+    default:
+      printf("Invalid choice.\n");
+      break;
     }
   }
 }
 
-app* alloc_app() {
-  app* a = malloc(sizeof(app));
+app *alloc_app() {
+  app *a = malloc(sizeof(app));
   a->idx = alloc_io_buf();
   a->data = alloc_io_buf();
   a->b = alloc_tree_buf();
-  if (a && a->idx && a->data){
-    if(DEBUG)
+  if (a && a->idx && a->data) {
+    if (DEBUG)
       puts("@Allocated APP_BUFFER");
     return a;
   }
@@ -92,32 +110,31 @@ app* alloc_app() {
   return NULL;
 }
 
-void clear_app(app* app) {
-  if(app->idx) {
-    clear_io_buf(app->idx);   
+void clear_app(app *app) {
+  if (app->idx) {
+    clear_io_buf(app->idx);
     app->idx = NULL;
   }
-  if(app->data) {
+  if (app->data) {
     clear_io_buf(app->data);
     app->data = NULL;
   }
-  if(app->b) {
+  if (app->b) {
     clear_tree_buf(app->b);
     app->b = NULL;
   }
-  if(app) {
+  if (app) {
     free(app);
     app = NULL;
   }
-  if(app)
+  if (app)
     puts("!! Error while clearing app");
 }
 
-
 int main(int argc, char **argv) {
   app *a;
-  char index_file[MAX_ADDRESS];
-  char data_file[MAX_ADDRESS];
+  char *index_file = malloc(MAX_ADDRESS);
+  char *data_file = malloc(MAX_ADDRESS);
   char converted_char;
 
   a = alloc_app();
@@ -131,19 +148,23 @@ int main(int argc, char **argv) {
   create_index_file(a->b->io, index_file);
   create_data_file(a->data, data_file);
 
-  load_file(a->idx, index_file, "index");
+  load_file(a->b->io, index_file, "index");
   load_file(a->data, data_file, "data");
+
+  free(data_file);
+  free(index_file);
 
   load_list(a->b->i, a->b->io->br->free_rrn_address);
 
-
   page *temp = load_page(a->b, a->b->io->br->root_rrn);
-  if((temp != NULL && temp->child_number < 1) || !a->b->io->br->root_rrn) {
-    build_tree(a->b, a->data, 99);
+  if ((temp != NULL && temp->child_number < 1) || !a->b->io->br->root_rrn) {
+    insert_list(a->b->i, 0);
+    build_tree(a->b, a->data, 2);
     print_queue(a->b->q);
   }
 
-  cli(a); 
+  free(temp);
+  cli(a);
   clear_app(a);
   return 0;
 }

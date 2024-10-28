@@ -110,9 +110,9 @@ page *queue_search(queue *q, u16 rrn) {
   }
 
   queue *temp = q;
-  while (temp != NULL) {                        
-    if (temp->page && temp->page->rrn == rrn) { 
-      if (DEBUG) 
+  while (temp != NULL) {
+    if (temp->page && temp->page->rrn == rrn) {
+      if (DEBUG)
         puts("@Found on queue");
       return temp->page;
     }

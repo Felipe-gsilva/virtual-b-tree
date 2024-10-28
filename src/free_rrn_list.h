@@ -2,16 +2,20 @@
 #define _FREE_RRN_LIST
 #include "defines.h"
 
-i_list *alloc_ilist();
+free_rrn_list *alloc_ilist();
 
-void clear_ilist(i_list *i);
+void clear_ilist(free_rrn_list *i);
 
-void load_list(i_list *i, char* s);
+void load_list(free_rrn_list *i, char* s);
 
-u16 get_free_rrn(i_list *i);
+u16 *load_rrn_list(free_rrn_list *i);
 
-u16 *load_rrns(i_list *i);
+u16 get_free_rrn(free_rrn_list *i);
 
-void i_insert(i_list *i, u16 rrn); // TODO
+u16 get_last_free_rrn(free_rrn_list *i);
+
+u16 *load_rrns(free_rrn_list *i);
+
+void insert_list(free_rrn_list *i, u16 rrn); 
 
 #endif
