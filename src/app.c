@@ -5,38 +5,22 @@
 #include "queue.h"
 
 void print_ascii_art() {
-  printf("                                         ,----,                      "
-         "          \n");
-  printf("                                       ,/   .`|                      "
-         "          \n");
-  printf("                ,---,.               ,`   .'  :,-.----.       ,---,. "
-         "   ,---,. \n");
-  printf("       ,---.  ,'  .'  \\            ;    ;     /\\    /  \\    ,'  "
-         ".' |  ,'  .' | \n");
-  printf("      /__./|,---.' .' |    ,---,..'___,/    ,' ;   :    \\ ,---.'   "
-         "|,---.'   | \n");
-  printf(" ,---.;  ; ||   |  |: |  ,'  .' ||    :     |  |   | .\\ : |   |   "
-         ".'|   |   .' \n");
-  printf("/___/ \\  | |:   :  :  /,---.'   ,;    |.';  ;  .   : |: | :   :  "
-         "|-,:   :  |-, \n");
-  printf("\\   ;  \\ ' |:   |    ; |   |    |`----'  |  |  |   |  \\ : :   |  "
-         ";/|:   |  ;/| \n");
-  printf(" \\   \\  \\: ||   :     \\:   :  .'     '   :  ;  |   : .  / |   :  "
-         " .'|   :   .' \n");
-  printf("  ;   \\  ' .|   |   . |:   |.'       |   |  '  ;   | |  \\ |   |  "
-         "|-,|   |  |-, \n");
-  printf("   \\   \\   ''   :  '; |`---'         '   :  |  |   | ;\\  \\'   :  "
-         ";/|'   :  ;/| \n");
-  printf("    \\   `  ;|   |  | ;               ;   |.'   :   ' | \\.|   |    "
-         "\\|   |    \\ \n");
-  printf("     :   \\ ||   :   /                '---'     :   : :-'  |   :   "
-         ".'|   :   .' \n");
-  printf("      '---\" |   | ,'                           |   |.'    |   | ,'  "
-         "|   | ,'   \n");
-  printf("            `----'                             `---'      `----'    "
-         "`----'     \n");
-  printf("                                                                     "
-         "           \n");
+  printf("                                         ,----,                      " "          \n");
+  printf("                                       ,/   .`|                      " "          \n");
+  printf("                ,---,.               ,`   .'  :,-.----.       ,---,. " "   ,---,. \n");
+  printf("       ,---.  ,'  .'  \\            ;    ;     /\\    /  \\    ,'  " ".' |  ,'  .' | \n");
+  printf("      /__./|,---.' .' |    ,---,..'___,/    ,' ;   :    \\ ,---.'   " "|,---.'   | \n");
+  printf(" ,---.;  ; ||   |  |: |  ,'  .' ||    :     |  |   | .\\ : |   |   " ".'|   |   .' \n");
+  printf("/___/ \\  | |:   :  :  /,---.'   ,;    |.';  ;  .   : |: | :   :  " "|-,:   :  |-, \n");
+  printf("\\   ;  \\ ' |:   |    ; |   |    |`----'  |  |  |   |  \\ : :   |  " ";/|:   |  ;/| \n");
+  printf(" \\   \\  \\: ||   :     \\:   :  .'     '   :  ;  |   : .  / |   :  " " .'|   :   .' \n");
+  printf("  ;   \\  ' .|   |   . |:   |.'       |   |  '  ;   | |  \\ |   |  " "|-,|   |  |-, \n");
+  printf("   \\   \\   ''   :  '; |`---'         '   :  |  |   | ;\\  \\'   :  " ";/|'   :  ;/| \n");
+  printf("    \\   `  ;|   |  | ;               ;   |.'   :   ' | \\.|   |    " "\\|   |    \\ \n");
+  printf("     :   \\ ||   :   /                '---'     :   : :-'  |   :   " ".'|   :   .' \n");
+  printf("      '---\" |   | ,'                           |   |.'    |   | ,'  " "|   | ,'   \n");
+  printf("            `----'                             `---'      `----'    " "`----'     \n");
+  printf("                                                                     " "           \n");
 }
 
 void cli(app *a) {
@@ -70,19 +54,18 @@ void cli(app *a) {
       puts("Page not found!");
       break;
     case 2:
-      printf("Enter ID to update: ");
+      puts("Digite a placa");
       scanf("%s", placa);
-      printf("%s", placa);
       // update_key(id);
       break;
     case 3:
+      puts("Digite a placa");
+      scanf("%s", placa);
       b_insert(a->b, a->data, d, get_free_rrn(a->b->i));
       break;
     case 4:
-      printf("Enter ID to remove: ");
+      puts("Digite a placa");
       scanf("%s", placa);
-      puts("tamanho paia");
-      printf("%s", placa);
       b_remove(a->b, a->data, placa);
       break;
     case 5:
@@ -159,7 +142,7 @@ int main(int argc, char **argv) {
   page *temp = load_page(a->b, a->b->io->br->root_rrn);
   if ((temp != NULL && temp->child_number < 1) || !a->b->io->br->root_rrn) {
     insert_list(a->b->i, 0);
-    build_tree(a->b, a->data, 2);
+    build_tree(a->b, a->data, 3);
     print_queue(a->b->q);
   }
 

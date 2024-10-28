@@ -72,7 +72,6 @@ struct page {
   key keys[ORDER - 1];
   u16 children[ORDER];
   u8 child_number;
-  u16 father;
   bool leaf;
 };
 
