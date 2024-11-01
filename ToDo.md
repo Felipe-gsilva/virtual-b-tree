@@ -1,5 +1,9 @@
 NOT INSERTING CORRECTLY BUT I CANT UNDERSTAND WHY
 
+better splitting 
+
+- [x] fix prepend
+
 - [x] fix opening file and creation
 
 - [x] add io_buf ops
@@ -10,7 +14,7 @@ on pages
 - [ ] page remove
 - [ ] page update
 
-- [ ] inverted list
+- [X] inverted list
 
 ---
 

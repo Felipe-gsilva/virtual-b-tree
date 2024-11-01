@@ -50,16 +50,32 @@ void print_queue(queue *q) {
   printf("Queue: ");
   queue *aux = q->next;
   while (aux) {
-    printf("%s ", aux->page->keys->id);
+    for (int i = 0; i < aux->page->child_number; i++)
+      printf("%s \t", aux->page->keys[i].id);
     aux = aux->next;
   }
-  printf("\n");
+  puts("");
 }
 
-void push_page(b_tree_buf *b, page *page) {
+void push_page(b_tree_buf *b, page *p) {
   if (!b->q) {
     puts("!!Error: NULL queue pointer");
     return;
+  }
+
+  page* temp_page = queue_search(b->q, p->rrn);
+  if (temp_page != NULL) {
+    if (DEBUG)
+      puts("@Page already found");
+    p->rrn = temp_page->rrn;
+    memcpy(p->keys, temp_page->keys, sizeof(temp_page->keys));
+    p->leaf = temp_page->leaf;
+    memcpy(p->children, temp_page->children, sizeof(temp_page->children));
+    p->child_number = temp_page->child_number;
+    if(p)
+      return;
+
+    exit(0);
   }
 
   queue *new_node = alloc_queue();
@@ -71,7 +87,7 @@ void push_page(b_tree_buf *b, page *page) {
   if (b->q->counter >= P)
     pop_page(b);
 
-  new_node->page = page;
+  new_node->page = p;
   new_node->next = NULL;
   queue *temp = b->q;
   while (temp->next != NULL) {

@@ -16,6 +16,6 @@ u16 get_last_free_rrn(free_rrn_list *i);
 
 u16 *load_rrns(free_rrn_list *i);
 
-void insert_list(free_rrn_list *i, u16 rrn); 
+void insert_list(free_rrn_list *i, int rrn); 
 
 #endif

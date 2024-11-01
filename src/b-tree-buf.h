@@ -3,8 +3,6 @@
 
 #include "defines.h"
 
-
-
 b_tree_buf *alloc_tree_buf();
 
 void build_tree(b_tree_buf *b, io_buf *data, int n);
@@ -43,7 +41,7 @@ void print_page(page *page);
 
 page *load_page(b_tree_buf *b, u16 rrn);
 
-void populate_tree_header(index_header_record *bh, char *file_name);
+void populate_index_header(index_header_record *bh, char *file_name);
 
 void load_index_header(io_buf *io);
 

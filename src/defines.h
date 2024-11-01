@@ -9,7 +9,7 @@
 #include <string.h>
 
 #define DEBUG 1 // 1 for dev mode, 0 for prod mode
-#define ORDER 3
+#define ORDER 4
 
 #define check puts("Breakdown here")
 // in bytes

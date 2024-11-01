@@ -2,6 +2,8 @@
 #include "io-buf.h"
 
 void sort_list(u16 A[], int n) {
+  if (n < 1)
+    return;
   int h = 1;
   while (h < n / 3) {
     h = 3 * h + 1;
@@ -19,17 +21,25 @@ void sort_list(u16 A[], int n) {
     }
     h = h / 3;
   }
-
-  for (int i = 0; i < n; i++)
-    printf("lista fera: %hu: ", A[i]);
 }
 
-int rrn_exists(u16 A[], int n, u16 rrn) {
-  for (int i = 0; i < n; i++) {
-    if (A[i] == rrn)
-      return 1;
+bool rrn_exists(u16 A[], int n, int rrn) {
+  if (!A || n <= 0)
+    return false;
+
+  int left = 0;
+  int right = n - 1;
+
+  while (left <= right) {
+    int mid = (left + right) / 2;
+    if (A[mid] == rrn)
+      return true;
+    if (A[mid] < rrn)
+      left = mid + 1;
+    else
+      right = mid - 1;
   }
-  return 0;
+  return false;
 }
 
 void write_rrn_list_to_file(free_rrn_list *i) {
@@ -37,17 +47,27 @@ void write_rrn_list_to_file(free_rrn_list *i) {
     return;
 
   fseek(i->io->fp, 0, SEEK_SET);
-  if (fwrite(&i->n, sizeof(u16), 1, i->io->fp) != 1) {
-    puts("!!Error: Failed to write RRN count");
+  if (i->n > 0) {
+    if (fwrite(&i->n, sizeof(u16), 1, i->io->fp) != 1) {
+      puts("!!Error: Failed to write RRN count");
+      return;
+    }
+
+    size_t written = fwrite(i->free_rrn, sizeof(u16), i->n, i->io->fp);
+    if (written != i->n) {
+      printf("!!Error: Expected to write %d elements, but wrote %zu\n", i->n,
+             written);
+      return;
+    }
     return;
   }
 
-  if (i->n > 0) {
-    fseek(i->io->fp, sizeof(u16), SEEK_SET);
-    if (fwrite(i->free_rrn, sizeof(u16), i->n, i->io->fp) != i->n) {
-      puts("!!Error: Failed to write RRN list");
-    }
+  i->n = 0;
+  if (fwrite(&i->n, sizeof(u16), 1, i->io->fp) != 1) {
+    puts("!!Error: Failed to write empty RRN count");
   }
+
+  fflush(i->io->fp);
 }
 
 free_rrn_list *alloc_ilist() {
@@ -95,7 +115,7 @@ void load_list(free_rrn_list *i, char *s) {
     }
   }
 
-  strncpy(i->io->address, s, (strlen(s)));
+  strcpy(i->io->address, s);
   i->io->address[strlen(s)] = '\0';
 
   i->io->fp = fopen(i->io->address, "r+b");
@@ -106,8 +126,16 @@ void load_list(free_rrn_list *i, char *s) {
       printf("!!Error: Cannot create file %s\n", s);
       return;
     }
-    i->n = 0;
+    i->n = 1;
+    i->free_rrn = malloc(sizeof(u16));
+    if (!i->free_rrn) {
+      puts("!!Error: Failed to allocate RRN list");
+      fclose(i->io->fp);
+      return;
+    }
+    i->free_rrn[0] = 0;
     fwrite(&i->n, sizeof(u16), 1, i->io->fp);
+    fwrite(i->free_rrn, sizeof(u16), i->n, i->io->fp);
     fclose(i->io->fp);
     i->io->fp = fopen(i->io->address, "r+b");
   }
@@ -115,20 +143,33 @@ void load_list(free_rrn_list *i, char *s) {
   fseek(i->io->fp, 0, SEEK_SET);
   size_t read = fread(&i->n, sizeof(u16), 1, i->io->fp);
   if (read != 1) {
-    i->n = 0;
+    i->n = 1;
+    i->free_rrn = malloc(sizeof(u16));
+    if (!i->free_rrn) {
+      puts("!!Error: Failed to allocate RRN list");
+      return;
+    }
+    i->free_rrn[0] = 0;
     fseek(i->io->fp, 0, SEEK_SET);
     fwrite(&i->n, sizeof(u16), 1, i->io->fp);
-  }
-
-  if (i->n > 0) {
+    fwrite(i->free_rrn, sizeof(u16), i->n, i->io->fp);
+  } else if (i->n > 0) {
     i->free_rrn = load_rrn_list(i);
     if (!i->free_rrn) {
-      i->n = 0;
+      i->n = 1;
+      i->free_rrn = malloc(sizeof(u16));
+      if (!i->free_rrn) {
+        puts("!!Error: Failed to allocate RRN list");
+        return;
+      }
+      i->free_rrn[0] = 0;
       fseek(i->io->fp, 0, SEEK_SET);
       fwrite(&i->n, sizeof(u16), 1, i->io->fp);
+      fwrite(i->free_rrn, sizeof(u16), i->n, i->io->fp);
     }
   }
 
+  fflush(i->io->fp);
   printf("@Loaded RRN list with %d entries\n", i->n);
 }
 
@@ -143,19 +184,17 @@ u16 *load_rrn_list(free_rrn_list *i) {
   }
 
   fseek(i->io->fp, sizeof(u16), SEEK_SET);
-  int read = fread(list, sizeof(u16) * i->n, 1, i->io->fp);
+  size_t read = fread(list, sizeof(u16), i->n, i->io->fp);
 
-  if (read != 1) {
+  if (read != i->n) {
     free(list);
-    printf("read thing %d\n", read);
-
-    puts("!!Error: could not read complete RRN list");
+    printf("!!Error: Expected to read %d elements, but read %zu\n", i->n, read);
     return NULL;
   }
 
   if (DEBUG) {
     for (int j = 0; j < i->n; j++)
-      printf("i->list[%d]: %d\t", j, list[j]);
+      printf("i->list[%d]: %hu\t", j, list[j]);
     puts("");
   }
   return list;
@@ -172,17 +211,39 @@ u16 get_free_rrn(free_rrn_list *i) {
 
   if (!i->free_rrn || i->n == 0) {
     puts("!!Error: No free RRNs available; initializing with default");
-    insert_list(i, 0);
+    i->n = 1;
+    i->free_rrn = malloc(sizeof(u16));
+    if (!i->free_rrn) {
+      puts("!!Error: Failed to allocate RRN list");
+      exit(1);
+    }
+    i->free_rrn[0] = 0;
+    write_rrn_list_to_file(i);
     return 0;
   }
 
-  u16 rrn = i->free_rrn[0];
+  int rrn = i->free_rrn[0];
   i->n--;
 
-  memmove(i->free_rrn, i->free_rrn + 1, sizeof(u16) * i->n);
+  if (i->n > 0)
+    memmove(i->free_rrn, i->free_rrn + 1, sizeof(u16) * i->n);
 
+  if (i->n < 1) {
+    u16 new_rrn = rrn + 1;
+    while (rrn_exists(i->free_rrn, i->n, new_rrn))
+      new_rrn++;
+
+    u16 *new_list = realloc(i->free_rrn, (i->n + 1) * sizeof(u16));
+    if (!new_list) {
+      puts("!!Error: Failed to reallocate RRN list");
+    }
+    i->free_rrn = new_list;
+    i->free_rrn[i->n] = new_rrn;
+    i->n++;
+  }
+
+  sort_list(i->free_rrn, i->n);
   write_rrn_list_to_file(i);
-
   return rrn;
 }
 
@@ -202,12 +263,13 @@ u16 get_last_free_rrn(free_rrn_list *i) {
   return i->free_rrn[i->n - 1];
 }
 
-void insert_list(free_rrn_list *i, u16 rrn) {
+void insert_list(free_rrn_list *i, int rrn) {
   if (!i || !i->io->fp) {
     puts("!!Error: NULL rrn list or file pointer");
     return;
   }
 
+  printf("Current count before insertion: %d\n", i->n);
   if (rrn_exists(i->free_rrn, i->n, rrn)) {
     printf("@RRN %d already exists in the list\n", rrn);
     return;
@@ -221,13 +283,20 @@ void insert_list(free_rrn_list *i, u16 rrn) {
 
   i->free_rrn = new_list;
   i->free_rrn[i->n++] = rrn;
+  printf("New count after insertion: %d\n", i->n);
 
   sort_list(i->free_rrn, i->n);
   write_rrn_list_to_file(i);
 
+  printf("List after insertion:\n");
+  for (int j = 0; j < i->n; j++)
+    printf("%hu ", i->free_rrn[j]);
+  puts("");
+
   if (DEBUG) {
     printf("@RRN %d added and list sorted. New list:\n", rrn);
-    for (int j = 0; j < i->n; j++) printf("%d ", i->free_rrn[j]);
+    for (int j = 0; j < i->n; j++)
+      printf("%d ", i->free_rrn[j]);
     puts("");
   }
 }
