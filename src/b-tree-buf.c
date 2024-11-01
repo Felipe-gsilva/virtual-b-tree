@@ -286,43 +286,32 @@ btree_status b_insert(b_tree_buf *b, io_buf *data, data_record *d, u16 rrn) {
   printf("flag from first insert %d\n", flag);
 
   if (flag == BTREE_PROMOTION && b->root->child_number >= ORDER - 1) {
-    puts("SIMMMMMMMMMMA");
+    if(DEBUG)
+      puts("@Splitting b-tree");
     page *new_root = alloc_page();
     if (new_root == NULL) {
       free(return_key);
       return BTREE_ERROR_MEMORY;
     }
 
-    if (!b->root) {
-      b->root = new_page(0);
-      if (!b->root) {
-        free(return_key);
-        free(new_root);
-        return BTREE_ERROR_MEMORY;
-      }
-    }
+    key *promo_key;
+    page *r_child;
 
-    if (new_root->child_number >= ORDER - 1) {
-      free(return_key);
-      free(new_root);
-      return BTREE_ERROR_INVALID_PAGE;
-    }
+    btree_status stt = split(b, b->root, r_child , promo_key);
 
-    new_root->keys[0] = *return_key;
+    new_root->keys[0] = *promo_key;
     new_root->children[0] = b->root->rrn;
     new_root->child_number = 1;
 
-    if (return_page) {
-      new_root->children[1] = return_page->rrn;
+    if(r_child) {
+      new_root->children[1] = r_child->rrn;
       new_root->child_number++;
-      free(return_page);
     }
 
     u16 new_rrn = get_free_rrn(b->i);
     printf("@new rrn to be added %hu\n", new_rrn);
 
     if (new_rrn == (u16)-1) {
-      free(return_key);
       free(new_root);
       return BTREE_ERROR_IO;
     }
@@ -381,72 +370,45 @@ btree_status insert_in_page(page *p, key k, page *r_child, int pos) {
   return BTREE_INSERTED_IN_PAGE;
 }
 
-btree_status split(b_tree_buf *b, page *p, key k, page *r_child, key *promo_key,
-                   page *new_page, int pos) {
-  if (!b || !p || !promo_key || !new_page || pos < 0 || pos >= ORDER) {
+btree_status split(b_tree_buf *b, page *p, page *r_child, key *promo_key) {
+  if (!b || !p || !promo_key) {
     return BTREE_ERROR_INVALID_PAGE;
   }
 
   int m = (ORDER - 1) / 2;
   key temp_keys[ORDER];
   int temp_children[ORDER + 1];
-
   memset(temp_keys, 0, sizeof(temp_keys));
   memset(temp_children, 0, sizeof(temp_children));
 
-  for (int i = 0, j = 0; i < p->child_number && j < ORDER; i++, j++) {
-    if (j == pos) {
-      if (j < ORDER) {
-        temp_keys[j] = k;
-        if (j + 1 < ORDER + 1)
-          temp_children[j + 1] = r_child ? r_child->rrn : p->children[j + 1];
-        j++;
-      }
-    }
-    if (j < ORDER) {
-      temp_keys[j] = p->keys[i];
-      temp_children[j] = p->children[i];
-    }
+  if (p->child_number < ORDER - 1) {
+    puts("!!Error: wrong page to split");
+    return BTREE_ERROR_INVALID_PAGE;
   }
 
-  if (pos < ORDER + 1) {
-    temp_children[pos + 1] = r_child ? r_child->rrn : p->children[pos + 1];
+  page *temp_page = alloc_page();
+
+  // copy keys
+  for (int i = m - 1, j = 0; i >= 0, j < m; i--, j++) {
+    temp_keys[j] = p->keys[i];
+    memset(p->keys[i].id, 0, TAMANHO_PLACA);
+    p->keys[i].data_register_rrn = (u16)-1;
   }
 
-  *promo_key = temp_keys[m];
+  for (int i = 0; i >= 0; i--)
+    printf("testing %s\n", temp_keys[i].id);
 
-  memset(p->keys, 0, sizeof(key) * ORDER);
-  memset(p->children, 0, sizeof(int) * (ORDER + 1));
+  *p->keys = *temp_keys;
+  *promo_key = p->keys[m];
+  r_child = temp_page;
 
-  p->child_number = m;
-  for (int i = 0; i < m && i < ORDER; i++) {
-    p->keys[i] = temp_keys[i];
-    p->children[i] = temp_children[i];
-  }
-  if (m < ORDER + 1) {
-    p->children[m] = temp_children[m];
-  }
+  // copy children
+  
 
-  new_page->child_number = ORDER - 1 - m;
-  for (int i = 0; i < new_page->child_number && i < ORDER; i++) {
-    new_page->keys[i] = temp_keys[m + 1 + i];
-    new_page->children[i] = temp_children[m + 1 + i];
-  }
-  if (new_page->child_number < ORDER + 1) {
-    new_page->children[new_page->child_number] = temp_children[ORDER];
-  }
+  // write on file both r_child and page
 
-  int new_rrn = get_free_rrn(b->i);
-  if (new_rrn < 0) {
-    return BTREE_ERROR_IO;
-  }
-  new_page->rrn = new_rrn;
-
-  if (write_index_record(b->io, p) < 0 ||
-      write_index_record(b->io, new_page) < 0) {
-    return BTREE_ERROR_IO;
-  }
-
+  // todo
+  exit(0);
   return BTREE_SUCCESS;
 }
 
@@ -505,8 +467,8 @@ btree_status insert_key(b_tree_buf *b, page *p, key k, key *promo_key,
   }
 
   key new_promo_key;
-  btree_status split_status =
-      split(b, p, promo, *r_child, &new_promo_key, new_page, pos);
+  page *child;
+  btree_status split_status = split(b, p, child , &new_promo_key);
 
   if (split_status != BTREE_SUCCESS) {
     free(new_page);

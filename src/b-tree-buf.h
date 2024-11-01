@@ -7,21 +7,22 @@ b_tree_buf *alloc_tree_buf();
 
 void build_tree(b_tree_buf *b, io_buf *data, int n);
 
-void populate_key(key *k,data_record *d, u16 rrn);
+void populate_key(key *k, data_record *d, u16 rrn);
 
 btree_status b_insert(b_tree_buf *b, io_buf *data, data_record *d, u16 rrn);
 
-btree_status insert_key(b_tree_buf *b, page *p, key k, key *promo_key, page **r_child);
+btree_status insert_key(b_tree_buf *b, page *p, key k, key *promo_key,
+                        page **r_child);
 
-btree_status split(b_tree_buf *b, page *p, key k, page *r_child, key *promo_key, page *new_page, int pos);
+btree_status split(b_tree_buf *b, page *p, page *r_child, key *promo_key);
 
 btree_status insert_in_page(page *p, key k, page *r_child, int pos);
 
 void create_index_file(io_buf *io, char *file_name);
 
-void create_list_file(FILE *fp , char *file_name);
+void create_list_file(FILE *fp, char *file_name);
 
-void clear_tree_buf(b_tree_buf*b);
+void clear_tree_buf(b_tree_buf *b);
 
 int write_root_rrn(b_tree_buf *b, u16 rrn);
 
@@ -29,11 +30,12 @@ void b_traverse(b_tree_buf *b, page *p);
 
 page *b_search(b_tree_buf *b, const char *s);
 
-u16 search_key(b_tree_buf *b, page *p, key key, u16 *found_pos, page **return_page);
+u16 search_key(b_tree_buf *b, page *p, key key, u16 *found_pos,
+               page **return_page);
 
 int search_in_page(page *page, key key, int *return_pos);
 
-int remove_key( b_tree_buf*b, page *page);
+int remove_key(b_tree_buf *b, page *page);
 
 void b_remove(b_tree_buf *b, io_buf *data, char *s);
 

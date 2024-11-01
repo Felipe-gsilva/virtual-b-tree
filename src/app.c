@@ -156,7 +156,6 @@ int main(int argc, char **argv) {
   load_list(a->b->i, a->b->io->br->free_rrn_address);
   page *temp = load_page(a->b, a->b->io->br->root_rrn);
   if (ftell(a->b->io->fp) <= a->b->io->br->header_size) {
-    fseek(a->b->io->fp, 0, SEEK_SET);
     insert_list(a->b->i, 0);
     build_tree(a->b, a->data, 4);
     print_queue(a->b->q);
