@@ -14,7 +14,7 @@ btree_status b_insert(b_tree_buf *b, io_buf *data, data_record *d, u16 rrn);
 btree_status insert_key(b_tree_buf *b, page *p, key k, key *promo_key,
                         page **r_child);
 
-btree_status split(b_tree_buf *b, page *p, page *r_child, key *promo_key);
+btree_status b_split(b_tree_buf *b, page *p, page **r_child, key *promo_key, key *incoming_key);
 
 btree_status insert_in_page(page *p, key k, page *r_child, int pos);
 

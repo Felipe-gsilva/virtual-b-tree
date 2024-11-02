@@ -9,7 +9,7 @@
 #include <string.h>
 
 #define DEBUG 1 // 1 for dev mode, 0 for prod mode
-#define ORDER 4
+#define ORDER 3
 
 #define check puts("Breakdown here")
 // in bytes
@@ -42,7 +42,8 @@ typedef enum {
   BTREE_ERROR_MEMORY = -1,
   BTREE_ERROR_IO = -2,
   BTREE_ERROR_DUPLICATE = -3,
-  BTREE_ERROR_INVALID_PAGE = -4
+  BTREE_ERROR_INVALID_PAGE = -4,
+  BTREE_ERROR_PAGE_FULL = -5
 } btree_status;
 
 typedef enum {  // not integrated yet
@@ -71,7 +72,8 @@ struct page {
   u16 rrn;
   key keys[ORDER - 1];
   u16 children[ORDER];
-  u8 child_number;
+  u8 child_num;
+  u8 keys_num;
   bool leaf;
 };
 

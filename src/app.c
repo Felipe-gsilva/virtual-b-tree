@@ -1,6 +1,6 @@
 #include "app.h"
 #include "b-tree-buf.h"
-#include "free_rrn_list.h"
+#include "free-rrn-list.h"
 #include "io-buf.h"
 #include "queue.h"
 
@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
   page *temp = load_page(a->b, a->b->io->br->root_rrn);
   if (ftell(a->b->io->fp) <= a->b->io->br->header_size) {
     insert_list(a->b->i, 0);
-    build_tree(a->b, a->data, 4);
+    build_tree(a->b, a->data, 3);
     print_queue(a->b->q);
   }
 

@@ -50,7 +50,7 @@ void print_queue(queue *q) {
   printf("Queue: ");
   queue *aux = q->next;
   while (aux) {
-    for (int i = 0; i < aux->page->child_number; i++)
+    for (int i = 0; i < aux->page->child_num; i++)
       printf("%s \t", aux->page->keys[i].id);
     aux = aux->next;
   }
@@ -71,7 +71,7 @@ void push_page(b_tree_buf *b, page *p) {
     memcpy(p->keys, temp_page->keys, sizeof(temp_page->keys));
     p->leaf = temp_page->leaf;
     memcpy(p->children, temp_page->children, sizeof(temp_page->children));
-    p->child_number = temp_page->child_number;
+    p->child_num= temp_page->child_num;
     if(p)
       return;
 
