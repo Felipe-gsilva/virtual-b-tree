@@ -157,11 +157,11 @@ int main(int argc, char **argv) {
   page *temp = load_page(a->b, a->b->io->br->root_rrn);
   if (ftell(a->b->io->fp) <= a->b->io->br->header_size) {
     insert_list(a->b->i, 0);
-    build_tree(a->b, a->data, 3);
+    build_tree(a->b, a->data, 8);
     print_queue(a->b->q);
+    //test_tree(a->b, a->data, 8);
   }
 
-  free(temp);
   cli(a);
   clear_app(a);
   return 0;

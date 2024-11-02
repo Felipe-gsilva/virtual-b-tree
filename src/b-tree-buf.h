@@ -7,6 +7,8 @@ b_tree_buf *alloc_tree_buf();
 
 void build_tree(b_tree_buf *b, io_buf *data, int n);
 
+void test_tree(b_tree_buf *b, io_buf *data, int n);
+
 void populate_key(key *k, data_record *d, u16 rrn);
 
 btree_status b_insert(b_tree_buf *b, io_buf *data, data_record *d, u16 rrn);

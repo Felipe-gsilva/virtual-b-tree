@@ -17,23 +17,32 @@ queue *alloc_queue() {
 
 void clear_queue(queue *q) {
   if (!q) {
-    puts("!!Error: NULL queue pointer");
+    fprintf(stderr, "!!Error: NULL queue pointer\n");
     return;
   }
-
   queue *current = q->next;
   queue *next_node;
 
   while (current) {
     next_node = current->next;
+    if (current->page) {
+      clear_page(current->page);
+      current->page = NULL;
+    }
     free(current);
     current = next_node;
   }
-  if (current != NULL)
-    free(current);
+
+  if (q->page) {
+    clear_page(q->page);
+    q->page = NULL;
+  }
   q->next = NULL;
-  if (DEBUG)
+  q->counter = 0;
+
+  if (DEBUG) {
     puts("@Queue cleared");
+  }
 }
 
 void print_queue(queue *q) {
@@ -63,19 +72,19 @@ void push_page(b_tree_buf *b, page *p) {
     return;
   }
 
-  page* temp_page = queue_search(b->q, p->rrn);
+  page *temp_page = queue_search(b->q, p->rrn);
   if (temp_page != NULL) {
     if (DEBUG)
       puts("@Page already found");
-    p->rrn = temp_page->rrn;
-    memcpy(p->keys, temp_page->keys, sizeof(temp_page->keys));
-    p->leaf = temp_page->leaf;
-    memcpy(p->children, temp_page->children, sizeof(temp_page->children));
-    p->child_num= temp_page->child_num;
-    if(p)
-      return;
-
-    exit(0);
+    temp_page->rrn = p->rrn;
+    memcpy(temp_page->keys, p->keys, sizeof(key) * p->keys_num);
+    temp_page->leaf = p->leaf;
+    memcpy(temp_page->children, p->children,
+           sizeof(u16) * p->child_num);
+    
+    temp_page->child_num = p->child_num ;
+    temp_page->keys_num = p->keys_num;
+    return;
   }
 
   queue *new_node = alloc_queue();
@@ -115,7 +124,6 @@ page *pop_page(b_tree_buf *b) {
   b->q->counter--;
   if (DEBUG)
     puts("@Popped from queue");
-  write_index_record(b->io, page);
   return page;
 }
 
