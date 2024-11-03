@@ -79,9 +79,9 @@ void build_tree(b_tree_buf *b, io_buf *data, int n) {
       puts("@Loaded rrn list");
     }
   }
-
+  data_record *d;
   for (int i = 0; i < n; i++) {
-    data_record *d = load_data_record(data, i);
+    d = load_data_record(data, i);
     if (!d) {
       printf("!!Failed to load record %d\n", i);
       continue;
@@ -94,8 +94,8 @@ void build_tree(b_tree_buf *b, io_buf *data, int n) {
     if (status != BTREE_SUCCESS && status != BTREE_INSERTED_IN_PAGE) {
       printf("!!Failed to insert record %d, error: %d\n", i, status);
     }
-    free(d);
   }
+  free(d);
 
   if (DEBUG) {
     puts("@Built tree");
@@ -152,7 +152,7 @@ page *load_page(b_tree_buf *b, u16 rrn) {
       puts("@Page found on queue");
     return q_page;
   }
-  if(!q_page)
+  if (!q_page)
     free(q_page);
 
   int byte_offset = (b->io->br->header_size) + ((b->io->br->page_size) * rrn);
@@ -212,20 +212,18 @@ void b_traverse(b_tree_buf *b, page *p) {
 }
 
 page *b_search(b_tree_buf *b, const char *s) {
-  u16 *pos = malloc(sizeof(u16));
+  u16 pos;
   page *return_page = NULL;
   key key;
   strcpy(key.id, s);
   if (!b->root)
     b->root = load_page(b, b->io->br->root_rrn);
-
-  int flag = search_key(b, b->root, key, pos, &return_page);
+  page *temp = b->root;
+  int flag = search_key(b, temp, key, &pos, &return_page);
   if (flag == BTREE_FOUND_KEY) {
-    free(pos);
     return return_page;
   }
   puts("--> Could not find key");
-  free(pos);
   return NULL;
 }
 
@@ -261,7 +259,7 @@ int search_in_page(page *p, key key, int *return_pos) {
 
 u16 search_key(b_tree_buf *b, page *p, key key, u16 *found_pos,
                page **return_page) {
-  if (!b || !found_pos || !return_page || !p) {
+  if (!b || !p) {
     puts("!!Error: NULL parameters");
     return BTREE_ERROR_INVALID_PAGE;
   }
@@ -434,7 +432,8 @@ btree_status b_insert(b_tree_buf *b, io_buf *data, data_record *d, u16 rrn) {
 
     flag = BTREE_SUCCESS;
   }
-  if (flag != BTREE_SUCCESS && flag != BTREE_ERROR_DUPLICATE && flag != BTREE_INSERTED_IN_PAGE) {
+  if (flag != BTREE_SUCCESS && flag != BTREE_ERROR_DUPLICATE &&
+      flag != BTREE_INSERTED_IN_PAGE) {
     if (DEBUG)
       printf("@Error during insertion: %d\n", flag);
   } else {
@@ -451,24 +450,33 @@ btree_status b_split(b_tree_buf *b, page *p, page **r_child, key *promo_key,
                      key *incoming_key) {
   key temp_keys[ORDER];
   u16 temp_children[ORDER + 1];
+  memset(temp_children, (u16)-1, sizeof(temp_children));
 
-  memcpy(temp_keys, p->keys, p->keys_num * sizeof(key));
-
+  // Find the correct position to insert the incoming_key
   int i = 0;
-  for (i = 0; i < p->keys_num && strcmp(p->keys[i].id, incoming_key->id) < 0; i++){
-    memmove(&temp_keys[i + 1], &temp_keys[i],(p->keys_num - i) * sizeof(key));
+  while (i < p->keys_num && strcmp(p->keys[i].id, incoming_key->id) < 0) {
+    temp_keys[i] = p->keys[i];
+    i++;
   }
+
+  // Insert the incoming_key at position i
   temp_keys[i] = *incoming_key;
 
+  // Copy remaining keys after the insertion point
+  for (int j = i; j < p->keys_num; j++) {
+    temp_keys[j + 1] = p->keys[j];
+  }
 
+  // If the page is not a leaf, adjust children pointers
   if (!p->leaf) {
     memcpy(temp_children, p->children, p->child_num * sizeof(u16));
-    memmove(&temp_children[i + 1], &temp_children[i], (p->child_num - i - 1) * sizeof(u16));
+    // Shift the child pointers to make space for the new child
+    memmove(&temp_children[i + 1], &temp_children[i],
+            (p->child_num - i) * sizeof(u16));
     temp_children[i] = ((*r_child) != NULL) ? (*r_child)->rrn : (u16)-1;
   }
 
-  int split =(int) (ORDER / 2);
-
+  // Create a new page for the split
   page *new_page = alloc_page();
   if (!new_page)
     return BTREE_ERROR_MEMORY;
@@ -479,18 +487,24 @@ btree_status b_split(b_tree_buf *b, page *p, page **r_child, key *promo_key,
     return BTREE_ERROR_IO;
   }
 
+  int split = ORDER / 2;
   *promo_key = temp_keys[split];
 
+  // Assign keys to the left (original) page
   p->keys_num = 0;
   for (i = 0; i < split; i++) {
     p->keys[p->keys_num++] = temp_keys[i];
   }
+  p->keys_num = split;
 
+  // Assign keys to the right (new) page
   new_page->leaf = p->leaf;
-  for (i = split + 1; i <= ORDER - 1; i++) {
+  new_page->keys_num = 0;
+  for (i = split + 1; i < ORDER; i++) {
     new_page->keys[new_page->keys_num++] = temp_keys[i];
   }
 
+  // Handle children for internal nodes
   if (!p->leaf) {
     p->child_num = split + 1;
     new_page->child_num = 0;
@@ -503,6 +517,12 @@ btree_status b_split(b_tree_buf *b, page *p, page **r_child, key *promo_key,
     }
   }
 
+  // Clear the remaining slots in the original page
+  for (i = split; i < ORDER - 1; i++) {
+    memset(&p->keys[i], (u16)-1, sizeof(key));
+  }
+
+  // Write both pages to disk
   btree_status status;
   if ((status = write_index_record(b, p)) != BTREE_SUCCESS ||
       (status = write_index_record(b, new_page)) != BTREE_SUCCESS) {
@@ -704,7 +724,8 @@ int write_index_record(b_tree_buf *b, page *p) {
     return BTREE_ERROR_MEMORY;
   }
 
-  int byte_offset = (b->io->br->header_size) + ((b->io->br->page_size) * p->rrn);
+  int byte_offset =
+      (b->io->br->header_size) + ((b->io->br->page_size) * p->rrn);
   if (DEBUG) {
     puts("////////");
     printf("@Writting following page: \n");
@@ -722,12 +743,13 @@ int write_index_record(b_tree_buf *b, page *p) {
     return BTREE_ERROR_IO;
   }
 
+  fflush(b->io->fp);
+
   if (DEBUG)
     printf("@Successfully wrote page %hu at offset %d\n", p->rrn, byte_offset);
 
-  fflush(b->io->fp);
   page *q_page = queue_search(b->q, p->rrn);
-  if(p == q_page)
+  if (p == q_page)
     push_page(b, p);
 
   return BTREE_SUCCESS;
@@ -806,8 +828,8 @@ page *alloc_page() {
   if (p) {
     memset(p, 0, sizeof(page));
     p->leaf = true;
-    for (int i = 0; i < ORDER - 1; i++)
-      p->children[i] = (u16)-1;
+    memset(p->children, (u16)-1, sizeof(u16) * (ORDER));
+    memset(p->keys, (u16)-1, sizeof(key) * (ORDER - 1));
   }
   return p;
 }

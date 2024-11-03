@@ -22,7 +22,6 @@ void clear_queue(queue *q) {
   }
   queue *current = q->next;
   queue *next_node;
-
   while (current) {
     next_node = current->next;
     if (current->page) {
@@ -32,11 +31,7 @@ void clear_queue(queue *q) {
     free(current);
     current = next_node;
   }
-
-  if (q->page) {
-    clear_page(q->page);
-    q->page = NULL;
-  }
+  // Do not attempt to access q->page if it's a dummy head
   q->next = NULL;
   q->counter = 0;
 
@@ -86,21 +81,26 @@ void print_queue(queue *q) {
 }
 
 void push_page(b_tree_buf *b, page *p) {
-  if (!b->q) {
-    puts("!!Error: NULL queue pointer");
+  if (!b->q || !p) {
+    puts("!!Error: NULL queue pointer or page");
     return;
   }
 
+  // Use updated queue_search
   page *temp_page = queue_search(b->q, p->rrn);
   if (temp_page != NULL) {
     if (DEBUG)
-      puts("@Page already found");
-    memcpy(temp_page->keys, p->keys, sizeof(key) * p->keys_num);
-    temp_page->leaf = p->leaf;
-    memcpy(temp_page->children, p->children, sizeof(u16) * p->child_num);
-    temp_page->child_num = p->child_num;
-    temp_page->keys_num = p->keys_num;
+      puts("@Page already found in queue");
+    memcpy(temp_page, p, sizeof(page));
     return;
+  }
+
+  // Proceed to add the new page to the queue
+  if (b->q->counter >= P) {
+    page *popped_page = pop_page(b);
+    if (DEBUG && popped_page) {
+      printf("@Popped page with RRN %hu from queue\n", popped_page->rrn);
+    }
   }
 
   queue *new_node = alloc_queue();
@@ -109,25 +109,18 @@ void push_page(b_tree_buf *b, page *p) {
     return;
   }
 
-  if (b->q->counter >= P) {
-    page *popped_page = pop_page(b);
-    if (DEBUG && popped_page) {
-      printf("@Popped page with RRN %hu from queue\n", popped_page->rrn);
-    }
-  }
-
   new_node->page = p;
   new_node->next = NULL;
 
+  // Insert the new node at the end of the queue
   queue *temp = b->q;
   while (temp->next != NULL) {
     temp = temp->next;
   }
   temp->next = new_node;
   b->q->counter++;
-
   if (DEBUG)
-    puts("@Pushed on queue");
+    puts("@Pushed page onto queue");
 }
 
 page *pop_page(b_tree_buf *b) {
@@ -155,8 +148,7 @@ page *queue_search(queue *q, u16 rrn) {
       puts("!!Error: NULL or Empty queue pointer");
     return NULL;
   }
-
-  queue *temp = q;
+  queue *temp = q->next; // Start after the dummy head
   while (temp != NULL) {
     if (temp->page && temp->page->rrn == rrn) {
       if (DEBUG)
@@ -165,7 +157,6 @@ page *queue_search(queue *q, u16 rrn) {
     }
     temp = temp->next;
   }
-
   if (DEBUG)
     puts("@Page not found in queue");
   return NULL;
