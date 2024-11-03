@@ -25,4 +25,7 @@ void write_data_record(io_buf *io, data_record *d, u16 rrn);
 
 void clear_io_buf(io_buf *io_buf);
 
+
+void d_insert (io_buf *io, data_record *d, u16 rrn); // TODO
+
 #endif

@@ -63,19 +63,25 @@ typedef struct page page;
 typedef struct app app;
 typedef struct free_rrn_list free_rrn_list;
 
+
+#pragma pack(push, 1)
 struct key {
   u16 data_register_rrn;
   char id[TAMANHO_PLACA];
 };
+#pragma pack(pop)
 
+#pragma pack(push, 1)
 struct page {
   u16 rrn;
   key keys[ORDER - 1];
   u16 children[ORDER];
   u8 child_num;
   u8 keys_num;
-  bool leaf;
+  u8 leaf;
 };
+#pragma pack(pop)
+
 
 struct queue {
   queue *next;
@@ -130,6 +136,7 @@ struct app {
   io_buf *idx;
   io_buf *data;
   b_tree_buf *b;
+  free_rrn_list *d;
 };
 
 #endif

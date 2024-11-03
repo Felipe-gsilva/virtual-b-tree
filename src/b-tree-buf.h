@@ -7,8 +7,6 @@ b_tree_buf *alloc_tree_buf();
 
 void build_tree(b_tree_buf *b, io_buf *data, int n);
 
-void test_tree(b_tree_buf *b, io_buf *data, int n);
-
 void populate_key(key *k, data_record *d, u16 rrn);
 
 btree_status b_insert(b_tree_buf *b, io_buf *data, data_record *d, u16 rrn);
@@ -30,7 +28,7 @@ int write_root_rrn(b_tree_buf *b, u16 rrn);
 
 void b_traverse(b_tree_buf *b, page *p);
 
-page *b_search(b_tree_buf *b, const char *s);
+page *b_search(b_tree_buf *b, const char *s, u16 *return_pos);
 
 u16 search_key(b_tree_buf *b, page *p, key key, u16 *found_pos,
                page **return_page);

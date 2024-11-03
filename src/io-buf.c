@@ -32,6 +32,8 @@ io_buf *alloc_io_buf() {
   return io;
 }
 
+void d_insert(io_buf *io, data_record *d, u16 rrn) {}
+
 void load_data_header(io_buf *io) {
   if (!io || !io->fp) {
     puts("!!Invalid IO buffer or file pointer");

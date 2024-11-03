@@ -31,7 +31,6 @@ void clear_queue(queue *q) {
     free(current);
     current = next_node;
   }
-  // Do not attempt to access q->page if it's a dummy head
   q->next = NULL;
   q->counter = 0;
 
@@ -86,16 +85,18 @@ void push_page(b_tree_buf *b, page *p) {
     return;
   }
 
-  // Use updated queue_search
   page *temp_page = queue_search(b->q, p->rrn);
   if (temp_page != NULL) {
     if (DEBUG)
       puts("@Page already found in queue");
-    memcpy(temp_page, p, sizeof(page));
+    temp_page->keys_num = p->keys_num;
+    temp_page->child_num = p->child_num;
+    temp_page->leaf = p->leaf;
+    memcpy(temp_page->keys, p->keys, sizeof(key) * p->keys_num);
+    memcpy(temp_page->children, p->children, sizeof(u16) * p->child_num);
     return;
   }
 
-  // Proceed to add the new page to the queue
   if (b->q->counter >= P) {
     page *popped_page = pop_page(b);
     if (DEBUG && popped_page) {
@@ -112,7 +113,6 @@ void push_page(b_tree_buf *b, page *p) {
   new_node->page = p;
   new_node->next = NULL;
 
-  // Insert the new node at the end of the queue
   queue *temp = b->q;
   while (temp->next != NULL) {
     temp = temp->next;
@@ -148,16 +148,16 @@ page *queue_search(queue *q, u16 rrn) {
       puts("!!Error: NULL or Empty queue pointer");
     return NULL;
   }
-  queue *temp = q->next; // Start after the dummy head
+  queue *temp = q->next;
   while (temp != NULL) {
     if (temp->page && temp->page->rrn == rrn) {
       if (DEBUG)
-        puts("@Page found in queue");
+        printf("@Page with RRN %hu found in queue\n", rrn);
       return temp->page;
     }
     temp = temp->next;
   }
   if (DEBUG)
-    puts("@Page not found in queue");
+    printf("@Page with RRN %hu not found in queue\n", rrn);
   return NULL;
 }

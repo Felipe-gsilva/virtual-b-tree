@@ -5,7 +5,7 @@
 
 void cli(app *a);
 
-app *alloc_app();
+app *alloc_app(void);
 
 void clear_app(app *app);
 
