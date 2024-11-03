@@ -39,10 +39,29 @@ void print_ascii_art() {
          "           \n");
 }
 
+char *get_id(int i) {
+  if (i >= 3) {
+    puts("Many tries");
+    exit(0);
+  }
+  char placa[TAMANHO_PLACA];
+  puts("Digite a placa");
+  scanf("%s", placa);
+  if (strlen(placa) != 7) {
+    puts("!!Wrong size mate");
+    return get_id(i + 1);
+  }
+
+  char *return_key[TAMANHO_PLACA];
+  strcpy(*return_key, placa);
+  *return_key[strlen(*return_key) + 1] = '\0';
+
+  return *return_key;
+}
+
 void cli(app *a) {
   int choice = -1;
   page *p;
-  char placa[TAMANHO_PLACA];
   data_record *d = malloc(sizeof(data_record));
   print_ascii_art();
 
@@ -60,9 +79,7 @@ void cli(app *a) {
     case 0:
       return;
     case 1:
-      puts("Digite a placa");
-      scanf("%s", placa);
-      p = b_search(a->b, placa);
+      p = b_search(a->b, get_id(0));
       if (p) {
         print_page(p);
         break;
@@ -70,19 +87,13 @@ void cli(app *a) {
       puts("Page not found!");
       break;
     case 2:
-      puts("Digite a placa");
-      scanf("%s", placa);
-      // update_key(id);
+      // b_update(id);
       break;
     case 3:
-      puts("Digite a placa");
-      scanf("%s", placa);
       b_insert(a->b, a->data, d, get_free_rrn(a->b->i));
       break;
     case 4:
-      puts("Digite a placa");
-      scanf("%s", placa);
-      b_remove(a->b, a->data, placa);
+      b_remove(a->b, a->data, get_id(0));
       break;
     case 5:
       print_queue(a->b->q);
@@ -157,9 +168,9 @@ int main(int argc, char **argv) {
   page *temp = load_page(a->b, a->b->io->br->root_rrn);
   if (ftell(a->b->io->fp) <= a->b->io->br->header_size) {
     insert_list(a->b->i, 0);
-    build_tree(a->b, a->data, 8);
+    build_tree(a->b, a->data, 30);
     print_queue(a->b->q);
-    //test_tree(a->b, a->data, 8);
+    test_tree(a->b, a->data, 30);
   }
 
   cli(a);

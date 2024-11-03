@@ -51,7 +51,7 @@ void load_index_header(io_buf *io);
 
 int write_index_header(io_buf *io);
 
-int write_index_record(io_buf *io, page *p);
+int write_index_record(b_tree_buf *b, page *p);
 
 page *alloc_page();
 

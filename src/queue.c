@@ -17,7 +17,7 @@ queue *alloc_queue() {
 
 void clear_queue(queue *q) {
   if (!q) {
-    fprintf(stderr, "!!Error: NULL queue pointer\n");
+    puts("!!Error: NULL queue pointer\n");
     return;
   }
   queue *current = q->next;
@@ -47,23 +47,42 @@ void clear_queue(queue *q) {
 
 void print_queue(queue *q) {
   if (!q) {
-    puts("!!Error: NULL queue pointer");
+    fprintf(stderr, "!!Error: NULL queue pointer\n");
     return;
   }
 
   if (!q->next) {
-    puts("!!Error: Empty queue");
+    fprintf(stderr, "!!Error: Empty queue\n");
     return;
   }
 
-  printf("Queue: ");
-  queue *aux = q->next;
-  while (aux) {
-    for (int i = 0; i < aux->page->child_num; i++)
-      printf("%s \t", aux->page->keys[i].id);
-    aux = aux->next;
+  printf("Queue contents:\n");
+  queue *current = q->next;
+  int node_count = 0;
+
+  while (current) {
+    if (!current->page) {
+      fprintf(stderr, "!!Error: NULL page in queue node %d\n", node_count);
+      current = current->next;
+      continue;
+    }
+
+    printf("Node %d (RRN: %d) Keys: ", node_count, current->page->rrn);
+
+    for (int i = 0; i < current->page->keys_num && i < ORDER - 1; i++) {
+      if (current->page->keys[i].id[0] != '\0') {
+        printf("%s ", current->page->keys[i].id);
+      }
+    }
+    printf("\n");
+
+    current = current->next;
+    node_count++;
   }
-  puts("");
+
+  if (DEBUG) {
+    printf("Total nodes in queue: %d\n", node_count);
+  }
 }
 
 void push_page(b_tree_buf *b, page *p) {
@@ -76,13 +95,10 @@ void push_page(b_tree_buf *b, page *p) {
   if (temp_page != NULL) {
     if (DEBUG)
       puts("@Page already found");
-    temp_page->rrn = p->rrn;
     memcpy(temp_page->keys, p->keys, sizeof(key) * p->keys_num);
     temp_page->leaf = p->leaf;
-    memcpy(temp_page->children, p->children,
-           sizeof(u16) * p->child_num);
-    
-    temp_page->child_num = p->child_num ;
+    memcpy(temp_page->children, p->children, sizeof(u16) * p->child_num);
+    temp_page->child_num = p->child_num;
     temp_page->keys_num = p->keys_num;
     return;
   }
@@ -93,11 +109,16 @@ void push_page(b_tree_buf *b, page *p) {
     return;
   }
 
-  if (b->q->counter >= P)
-    pop_page(b);
+  if (b->q->counter >= P) {
+    page *popped_page = pop_page(b);
+    if (DEBUG && popped_page) {
+      printf("@Popped page with RRN %hu from queue\n", popped_page->rrn);
+    }
+  }
 
   new_node->page = p;
   new_node->next = NULL;
+
   queue *temp = b->q;
   while (temp->next != NULL) {
     temp = temp->next;
@@ -110,26 +131,28 @@ void push_page(b_tree_buf *b, page *p) {
 }
 
 page *pop_page(b_tree_buf *b) {
-  if (!b->q) {
+  if (!b->q || b->q->next == NULL) {
     puts("!!Error: NULL or Empty queue pointer");
     return NULL;
   }
 
-  queue *q = b->q->next;
-  page *page = q->page;
+  queue *head = b->q->next;
+  page *page = head->page;
 
-  b->q->next = q->next;
-
-  free(q);
+  b->q->next = head->next;
   b->q->counter--;
+
   if (DEBUG)
     puts("@Popped from queue");
+
+  free(head);
   return page;
 }
 
 page *queue_search(queue *q, u16 rrn) {
   if (!q) {
-    puts("!!Error: NULL or Empty queue pointer");
+    if (DEBUG)
+      puts("!!Error: NULL or Empty queue pointer");
     return NULL;
   }
 
@@ -137,12 +160,13 @@ page *queue_search(queue *q, u16 rrn) {
   while (temp != NULL) {
     if (temp->page && temp->page->rrn == rrn) {
       if (DEBUG)
-        puts("@Found on queue");
+        puts("@Page found in queue");
       return temp->page;
     }
     temp = temp->next;
   }
 
-  puts("!!Error: page not found on queue");
+  if (DEBUG)
+    puts("@Page not found in queue");
   return NULL;
 }

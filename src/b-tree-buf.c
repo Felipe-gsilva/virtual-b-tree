@@ -121,6 +121,8 @@ void test_tree(b_tree_buf *b, io_buf *data, int n) {
       printf("!!Failed to load record %d\n", i);
       continue;
     }
+    puts("--------------");
+    printf("TEST NUM %d\n", i);
     printf("tested ids %s\n", d->placa);
 
     p = b_search(b, d->placa);
@@ -143,12 +145,15 @@ page *load_page(b_tree_buf *b, u16 rrn) {
     return NULL;
   }
 
-  page *q_page = queue_search(b->q, rrn);
+  page *q_page = alloc_page();
+  q_page = queue_search(b->q, rrn);
   if (q_page != NULL) {
     if (DEBUG)
       puts("@Page found on queue");
     return q_page;
   }
+  if(!q_page)
+    free(q_page);
 
   int byte_offset = (b->io->br->header_size) + ((b->io->br->page_size) * rrn);
 
@@ -417,20 +422,19 @@ btree_status b_insert(b_tree_buf *b, io_buf *data, data_record *d, u16 rrn) {
       free(return_key);
       return BTREE_ERROR_IO;
     }
-    new_root->rrn = new_rrn;
     b->root = new_root;
+    b->root->rrn = new_rrn;
 
     if (write_root_rrn(b, b->root->rrn) != BTREE_SUCCESS ||
-        write_index_record(b->io, b->root) != BTREE_SUCCESS) {
+        write_index_record(b, b->root) != BTREE_SUCCESS) {
       free(k);
       free(return_key);
       return BTREE_ERROR_IO;
     }
 
-    push_page(b, b->root);
     flag = BTREE_SUCCESS;
   }
-  if (flag != BTREE_SUCCESS && flag != BTREE_ERROR_DUPLICATE) {
+  if (flag != BTREE_SUCCESS && flag != BTREE_ERROR_DUPLICATE && flag != BTREE_INSERTED_IN_PAGE) {
     if (DEBUG)
       printf("@Error during insertion: %d\n", flag);
   } else {
@@ -445,123 +449,105 @@ btree_status b_insert(b_tree_buf *b, io_buf *data, data_record *d, u16 rrn) {
 
 btree_status b_split(b_tree_buf *b, page *p, page **r_child, key *promo_key,
                      key *incoming_key) {
-  if (!b || !p || !r_child || !incoming_key || !promo_key) {
-    return BTREE_ERROR_INVALID_PAGE;
-  }
-
-  u16 m = (u16)ORDER / 2;
   key temp_keys[ORDER];
   u16 temp_children[ORDER + 1];
-  int i = m;
-  int k = 0;
 
-  memcpy(temp_keys, p->keys, m * sizeof(key));
-  memcpy(temp_children, p->children, (m + 1) * sizeof(u16));
+  memcpy(temp_keys, p->keys, p->keys_num * sizeof(key));
 
-  while (strcmp(temp_keys[i].id, incoming_key->id) < 0) {
-    temp_keys[i] = temp_keys[i - 1];
-    i--;
-    if (temp_children[i - 1] != (u16)-1) {
-      temp_children[i] = temp_children[i - 1];
-      k++;
-    }
+  int i = 0;
+  for (i = 0; i < p->keys_num && strcmp(p->keys[i].id, incoming_key->id) < 0; i++){
+    memmove(&temp_keys[i + 1], &temp_keys[i],(p->keys_num - i) * sizeof(key));
   }
-  if (temp_children[i - 1] != (u16)-1)
-    temp_children[i] = temp_children[i - 1];
   temp_keys[i] = *incoming_key;
 
-  for (i = 0; i < m + 1; i++)
-    printf("%hu\t", temp_children[i]);
 
-  page *temp_page = alloc_page();
-  if (!temp_page)
+  if (!p->leaf) {
+    memcpy(temp_children, p->children, p->child_num * sizeof(u16));
+    memmove(&temp_children[i + 1], &temp_children[i], (p->child_num - i - 1) * sizeof(u16));
+    temp_children[i] = ((*r_child) != NULL) ? (*r_child)->rrn : (u16)-1;
+  }
+
+  int split =(int) (ORDER / 2);
+
+  page *new_page = alloc_page();
+  if (!new_page)
     return BTREE_ERROR_MEMORY;
 
-  temp_page->keys_num = m;
-  temp_page->child_num = k;
-  temp_page->rrn = p->rrn;
-  memcpy(temp_page->keys, temp_keys, sizeof(temp_keys) - sizeof(key));
-  memcpy(temp_page->children, temp_children,
-         sizeof(temp_children) - sizeof(u16));
-
-  print_page(temp_page);
-
-  *promo_key = temp_page->keys[m];
-  printf("promo key:%s\n", promo_key->id);
-
-  page *child = alloc_page();
-  for (int i = m, j = 0; i < ORDER - 1 & j < m; i++, j++) {
-    child->keys[j] = p->keys[i];
-  }
-  for (int i = m, j = 0; i < ORDER - 1 & j <= m; i++, j++) {
-    child->children[j] = p->children[i];
-    if (p->children[i] != (u16)-1)
-      child->child_num++;
+  new_page->rrn = get_free_rrn(b->i);
+  if (new_page->rrn == (u16)-1) {
+    free(new_page);
+    return BTREE_ERROR_IO;
   }
 
-  child->rrn = get_free_rrn(b->i);
-  child->keys_num = ORDER - m - 1;
-  print_page(child);
+  *promo_key = temp_keys[split];
 
-  *p = *temp_page;
-  *r_child = child;
+  p->keys_num = 0;
+  for (i = 0; i < split; i++) {
+    p->keys[p->keys_num++] = temp_keys[i];
+  }
 
-  print_page(p);
-  print_page(*r_child);
-  push_page(b, p);
-  push_page(b, child);
-  write_index_record(b->io, p);
-  write_index_record(b->io, child);
+  new_page->leaf = p->leaf;
+  for (i = split + 1; i <= ORDER - 1; i++) {
+    new_page->keys[new_page->keys_num++] = temp_keys[i];
+  }
+
+  if (!p->leaf) {
+    p->child_num = split + 1;
+    new_page->child_num = 0;
+
+    for (i = 0; i <= split; i++) {
+      p->children[i] = temp_children[i];
+    }
+    for (i = split + 1; i <= ORDER; i++) {
+      new_page->children[new_page->child_num++] = temp_children[i];
+    }
+  }
+
+  btree_status status;
+  if ((status = write_index_record(b, p)) != BTREE_SUCCESS ||
+      (status = write_index_record(b, new_page)) != BTREE_SUCCESS) {
+    return status;
+  }
+
+  *r_child = new_page;
+
   return BTREE_PROMOTION;
 }
 
 btree_status insert_key(b_tree_buf *b, page *p, key k, key *promo_key,
                         page **r_child) {
-  if (!b || !promo_key || !p) {
+  if (!b || !promo_key || !p)
     return BTREE_ERROR_INVALID_PAGE;
-  }
 
   int pos;
-  btree_status search_result = search_in_page(p, k, &pos);
-
-  if (search_result == BTREE_FOUND_KEY) {
+  btree_status status = search_in_page(p, k, &pos);
+  if (status == BTREE_FOUND_KEY)
     return BTREE_ERROR_DUPLICATE;
-  }
-
-  btree_status result;
-  page *child_page = NULL;
-  key temp_promo_key;
-  page *temp_r_child = NULL;
 
   if (!p->leaf) {
-    child_page = load_page(b, p->children[pos]);
-    result = insert_key(b, child_page, k, &temp_promo_key, &temp_r_child);
+    page *child = load_page(b, p->children[pos]);
+    if (!child)
+      return BTREE_ERROR_IO;
 
-    if (result != BTREE_PROMOTION) {
-      return result;
+    key temp_key;
+    page *temp_child = NULL;
+    status = insert_key(b, child, k, &temp_key, &temp_child);
+
+    if (status == BTREE_PROMOTION) {
+      k = temp_key;
+      if (p->keys_num < ORDER - 1) {
+        return insert_in_page(p, k, temp_child, pos);
+      }
+      return b_split(b, p, r_child, promo_key, &k);
     }
-
-    k = temp_promo_key;
-    *r_child = temp_r_child;
-   
+    return status;
   }
 
   if (p->keys_num < ORDER - 1) {
-    result = insert_in_page(p, k, *r_child, pos);
-    if (result == BTREE_INSERTED_IN_PAGE) {
-      write_index_record(b->io, p);
-      return BTREE_SUCCESS;
-    }
-  } else {
-    int isRoot = 0;
-    if(p == b->root) {
-      isRoot = 1;
-    }
-    result = b_split(b, p, r_child, promo_key, &k);
-    return result;
+    return insert_in_page(p, k, NULL, pos);
   }
 
-  return result;
+  return b_split(b, p, r_child, promo_key, &k);
 }
 
 page *redistribute(); // TODO
@@ -707,18 +693,18 @@ void load_index_header(io_buf *io) {
   }
 }
 
-int write_index_record(io_buf *io, page *p) {
-  if (!io || !p) {
+int write_index_record(b_tree_buf *b, page *p) {
+  if (!b->io || !p) {
     puts("!!Error: invalid parameters");
     return BTREE_ERROR_IO;
   }
 
-  if (!io->br || !io->fp) {
+  if (!b->io->br || !b->io->fp) {
     puts("!!Error: invalid buffer or file pointer");
     return BTREE_ERROR_MEMORY;
   }
 
-  int byte_offset = (io->br->header_size) + ((io->br->page_size) * p->rrn);
+  int byte_offset = (b->io->br->header_size) + ((b->io->br->page_size) * p->rrn);
   if (DEBUG) {
     puts("////////");
     printf("@Writting following page: \n");
@@ -726,20 +712,24 @@ int write_index_record(io_buf *io, page *p) {
     printf("byte_offset %d\n", byte_offset);
   }
 
-  if (fseek(io->fp, byte_offset, SEEK_SET) != 0) {
-    puts("!!Error: seek operation failed");
+  if (fseek(b->io->fp, byte_offset, SEEK_SET) != 0) {
+    puts("!!Error: seek operatb->ion failed");
     return BTREE_ERROR_IO;
   }
 
-  if (fwrite(p, io->br->page_size, 1, io->fp) != 1) {
-    puts("!!Error: write operation failed");
+  if (fwrite(p, b->io->br->page_size, 1, b->io->fp) != 1) {
+    puts("!!Error: write operatb->ion failed");
     return BTREE_ERROR_IO;
   }
 
   if (DEBUG)
     printf("@Successfully wrote page %hu at offset %d\n", p->rrn, byte_offset);
 
-  fflush(io->fp);
+  fflush(b->io->fp);
+  page *q_page = queue_search(b->q, p->rrn);
+  if(p == q_page)
+    push_page(b, p);
+
   return BTREE_SUCCESS;
 }
 
@@ -838,5 +828,5 @@ void clear_page(page *page) {
       puts("@Successfully freed page");
     return;
   }
-  puts("error while freeing page");
+  puts("Error while freeing page");
 }

@@ -4,7 +4,7 @@
 #include "defines.h"
 
 // queue max
-#define P 20
+#define P 10 
 
 queue *alloc_queue();
 
