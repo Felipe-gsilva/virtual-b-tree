@@ -65,12 +65,10 @@ void cli(app *a) {
     printf("Choose an option:\n");
     printf("0. Exit\n");
     printf("1. Search by id\n");
-    printf("2. Update\n");
-    printf("3. Insert\n");
-    printf("4. Remove\n");
-    printf("5. Print Queue\n");
-    printf("6. Clear Queue\n");
-    printf("7. Print root\n");
+    printf("2. Insert\n");
+    printf("3. Remove -- not working yet\n");
+    if(DEBUG)
+      printf("5. Print root -- DEBUG\n");
 
     printf("Enter your choice: ");
     scanf("%d", &choice);
@@ -90,13 +88,8 @@ void cli(app *a) {
       puts("Page not found!");
       break;
     case 2:
-      get_id(0, placa);
-      b_update(a->b, a->data, a->ld, placa);
-      break;
-    case 3:
       printf("Insira as informações do veículo:\n");
-      printf("Placa:");
-      scanf("%s", d->placa);
+      get_id(0, d->placa);
       printf("Modelo:");
       scanf("%s", d->modelo);
       printf("Marca:");
@@ -117,17 +110,11 @@ void cli(app *a) {
       b_insert(a->b, a->data, d, rrn);
       d_insert(a->data, d, a->ld, rrn);
       break;
-    case 4:
+    case 3:
       get_id(0, placa);
       b_remove(a->b, a->data, placa);
       break;
     case 5:
-      print_queue(a->b->q);
-      break;
-    case 6:
-      clear_queue(a->b->q);
-      break;
-    case 7:
       print_page(a->b->root);
       break;
     default:

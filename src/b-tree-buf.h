@@ -14,7 +14,8 @@ btree_status b_insert(b_tree_buf *b, io_buf *data, data_record *d, u16 rrn);
 btree_status insert_key(b_tree_buf *b, page *p, key k, key *promo_key,
                         page **r_child, bool *promoted);
 
-btree_status b_split(b_tree_buf *b, page *p, page **r_child, key *promo_key, key *incoming_key, bool *promoted);
+btree_status b_split(b_tree_buf *b, page *p, page **r_child, key *promo_key,
+                     key *incoming_key, bool *promoted);
 
 btree_status insert_in_page(page *p, key k, page *r_child, int pos);
 
@@ -24,8 +25,6 @@ void clear_tree_buf(b_tree_buf *b);
 
 int write_root_rrn(b_tree_buf *b, u16 rrn);
 
-void b_update(b_tree_buf *b, io_buf*data, free_rrn_list *ld, const char *placa); // TODO
-
 page *b_search(b_tree_buf *b, const char *s, u16 *return_pos);
 
 u16 search_key(b_tree_buf *b, page *p, key key, u16 *found_pos,
@@ -33,9 +32,13 @@ u16 search_key(b_tree_buf *b, page *p, key key, u16 *found_pos,
 
 int search_in_page(page *page, key key, int *return_pos);
 
-int remove_key(b_tree_buf *b, page *page);
+void b_remove(b_tree_buf *b, io_buf *data, const char *placa);
 
-void b_remove(b_tree_buf *b, io_buf *data, char *s);
+btree_status remove_key(b_tree_buf *b, page *p, key k, bool *merged);
+
+btree_status redistribute(b_tree_buf *b, page *p, int pos);
+
+btree_status merge(b_tree_buf *b, page *p, int pos);
 
 void print_page(page *page);
 
