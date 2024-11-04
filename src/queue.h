@@ -4,9 +4,9 @@
 #include "defines.h"
 
 // queue max
-#define P 200 
+#define P 5 
 
-queue *alloc_queue();
+queue *alloc_queue(void);
 
 void clear_queue(queue *queue);
 

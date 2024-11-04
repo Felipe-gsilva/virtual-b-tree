@@ -109,8 +109,13 @@ void cli(app *a) {
       scanf("%d", &(d->quilometragem));
       printf("Status:");
       scanf("%s", d->status);
-      b_insert(a->b, a->data, d, get_free_rrn(a->b->i));
-      d_insert(a->data, d, a->ld, get_free_rrn(a->ld));
+
+      u16 rrn = get_free_rrn(a->ld);
+      if (rrn == 0 && ftell(a->data->fp) >=
+                          (a->data->hr->header_size + a->data->hr->record_size))
+        rrn = get_free_rrn(a->ld);
+      b_insert(a->b, a->data, d, rrn);
+      d_insert(a->data, d, a->ld, rrn);
       break;
     case 4:
       get_id(0, placa);
@@ -212,6 +217,7 @@ int main(int argc, char **argv) {
       print_queue(a->b->q);
       test_tree(a->b, a->data, n);
     }
+
     insert_list(a->ld, n + 1);
     a->b->io->br->root_rrn = a->b->root->rrn;
     write_index_header(a->b->io);

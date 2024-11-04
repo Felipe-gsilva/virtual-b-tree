@@ -143,7 +143,8 @@ page *load_page(b_tree_buf *b, u16 rrn) {
   if (page)
     push_page(b, page);
 
-  printf("Loaded page RRN: %hu, keys_num: %u\n", page->rrn, page->keys_num);
+  if(DEBUG)
+    printf("Loaded page RRN: %hu, keys_num: %u\n", page->rrn, page->keys_num);
 
   return page;
 }

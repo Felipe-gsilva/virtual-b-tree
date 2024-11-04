@@ -49,7 +49,7 @@ int write_index_header(io_buf *io);
 
 int write_index_record(b_tree_buf *b, page *p);
 
-page *alloc_page();
+page *alloc_page(void);
 
 page *new_page(u16 rrn);
 
