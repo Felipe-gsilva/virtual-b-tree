@@ -66,8 +66,8 @@ void cli(app *a) {
     printf("0. Exit\n");
     printf("1. Search by id\n");
     printf("2. Insert\n");
-    printf("3. Remove -- not working yet\n");
-    if(DEBUG)
+    printf("3. Remove\n");
+    if (DEBUG)
       printf("4. Print root -- DEBUG\n");
 
     printf("Enter your choice: ");
@@ -88,19 +88,19 @@ void cli(app *a) {
       puts("Page not found!");
       break;
     case 2:
-      printf("Insira as informações do veículo:\n");
+      printf("Inserindo Veiculo:\n");
       get_id(0, d->placa);
-      printf("Modelo:");
+      printf("Modelo:\n");
       scanf("%s", d->modelo);
-      printf("Marca:");
+      printf("Marca:\n");
       scanf("%s", d->marca);
-      printf("Ano:");
+      printf("Ano:\n");
       scanf("%d", &(d->ano));
-      printf("Categoria:");
+      printf("Categoria:\n");
       scanf("%s", d->categoria);
-      printf("Quilometragem:");
+      printf("Quilometragem:\n");
       scanf("%d", &(d->quilometragem));
-      printf("Status:");
+      printf("Status:\n");
       scanf("%s", d->status);
 
       u16 rrn = get_free_rrn(a->ld);
@@ -115,8 +115,8 @@ void cli(app *a) {
       b_remove(a->b, a->data, placa);
       break;
     case 4:
-      if(DEBUG)
-          print_page(a->b->root);
+      if (DEBUG)
+        print_page(a->b->root);
       break;
     default:
       printf("Invalid choice.\n");

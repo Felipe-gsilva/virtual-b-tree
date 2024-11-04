@@ -7,15 +7,12 @@
 on pages
 - [x] page search
 - [x] page insert
-- [ ] page remove
-- [ ] page update
-
+- [x] page remove
 - [X] inverted list
 
 ---
 
 API exports
-- [ ] buscar veículo
-- [ ] deletar veículo
-- [ ] criar veículo
-- [ ] atualizar veículo
+- [x] buscar veículo
+- [x] deletar veículo
+- [x] criar veículo
