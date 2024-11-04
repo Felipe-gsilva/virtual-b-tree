@@ -90,7 +90,8 @@ void cli(app *a) {
       puts("Page not found!");
       break;
     case 2:
-      // b_update(id);
+      get_id(0, placa);
+      b_update(a->b, a->data, a->ld, placa);
       break;
     case 3:
       printf("Insira as informações do veículo:\n");
@@ -109,7 +110,7 @@ void cli(app *a) {
       printf("Status:");
       scanf("%s", d->status);
       b_insert(a->b, a->data, d, get_free_rrn(a->b->i));
-      d_insert(a->data, d, get_free_rrn(a->d)); // TODO
+      d_insert(a->data, d, a->ld, get_free_rrn(a->ld));
       break;
     case 4:
       get_id(0, placa);
@@ -136,7 +137,8 @@ app *alloc_app(void) {
   a->idx = alloc_io_buf();
   a->data = alloc_io_buf();
   a->b = alloc_tree_buf();
-  if (a && a->idx && a->data) {
+  a->ld = alloc_ilist();
+  if (a->idx && a->data) {
     if (DEBUG)
       puts("@Allocated APP_BUFFER");
     return a;
@@ -159,16 +161,20 @@ void clear_app(app *app) {
     clear_tree_buf(app->b);
     app->b = NULL;
   }
+  if (app->ld) {
+    clear_ilist(app->ld);
+    app->ld = NULL;
+  }
   if (app) {
     free(app);
     app = NULL;
   }
-  if (app)
+  if (app != NULL)
     puts("!! Error while clearing app");
 }
 
 int main(int argc, char **argv) {
-  int n = 12;
+  int n = 99;
 
   app *a;
   char *index_file = malloc(MAX_ADDRESS);
@@ -179,7 +185,7 @@ int main(int argc, char **argv) {
 
   strcpy(index_file, "public/btree-");
   converted_char = ORDER + '0';
-  index_file[13] = converted_char;
+  index_file[strlen(index_file)] = converted_char;
   strcat(index_file, ".idx");
   strcpy(data_file, "public/veiculos.dat");
 
@@ -193,6 +199,7 @@ int main(int argc, char **argv) {
   free(index_file);
 
   load_list(a->b->i, a->b->io->br->free_rrn_address);
+  load_list(a->ld, a->data->hr->free_rrn_address);
 
   page *temp = load_page(a->b, a->b->io->br->root_rrn);
   a->b->root = temp;
@@ -202,6 +209,7 @@ int main(int argc, char **argv) {
     print_queue(a->b->q);
     if (DEBUG)
       test_tree(a->b, a->data, n);
+    insert_list(a->ld, n + 1);
   }
 
   cli(a);

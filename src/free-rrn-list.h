@@ -2,7 +2,7 @@
 #define _FREE_RRN_LIST
 #include "defines.h"
 
-free_rrn_list *alloc_ilist();
+free_rrn_list *alloc_ilist(void);
 
 void clear_ilist(free_rrn_list *i);
 

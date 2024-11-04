@@ -136,7 +136,7 @@ struct app {
   io_buf *idx;
   io_buf *data;
   b_tree_buf *b;
-  free_rrn_list *d;
+  free_rrn_list *ld;
 };
 
 #endif

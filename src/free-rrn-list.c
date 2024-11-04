@@ -70,7 +70,7 @@ void write_rrn_list_to_file(free_rrn_list *i) {
   fflush(i->io->fp);
 }
 
-free_rrn_list *alloc_ilist() {
+free_rrn_list *alloc_ilist(void) {
   free_rrn_list *i = malloc(sizeof(free_rrn_list));
   if (!i)
     exit(-1);

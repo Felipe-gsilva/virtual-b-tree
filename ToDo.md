@@ -1,7 +1,3 @@
-NOT INSERTING CORRECTLY BUT I CANT UNDERSTAND WHY
-
-better splitting 
-
 - [x] fix prepend
 
 - [x] fix opening file and creation

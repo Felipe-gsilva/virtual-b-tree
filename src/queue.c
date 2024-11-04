@@ -1,7 +1,7 @@
 #include "queue.h"
 #include "b-tree-buf.h"
 
-queue *alloc_queue() {
+queue *alloc_queue(void) {
   queue *root = malloc(sizeof(queue));
   if (!root) {
     puts("!!Error: Memory allocation failed");
@@ -38,7 +38,6 @@ void clear_queue(queue *q) {
     puts("@Queue cleared");
   }
 }
-
 void print_queue(queue *q) {
   if (!q) {
     fprintf(stderr, "!!Error: NULL queue pointer\n");
@@ -63,11 +62,7 @@ void print_queue(queue *q) {
 
     printf("Node %d (RRN: %d) Keys: ", node_count, current->page->rrn);
 
-    for (int i = 0; i < current->page->keys_num && i < ORDER - 1; i++) {
-      if (current->page->keys[i].id[0] != '\0') {
-        printf("%s ", current->page->keys[i].id);
-      }
-    }
+    print_page(current->page);
     printf("\n");
 
     current = current->next;
@@ -97,14 +92,14 @@ void push_page(b_tree_buf *b, page *p) {
     return;
   }
 
-  if (b->q->counter >= P) {
+  if (b->q->counter > P) {
     page *popped_page = pop_page(b);
     if (DEBUG && popped_page) {
       printf("@Popped page with RRN %hu from queue\n", popped_page->rrn);
     }
   }
 
-  queue *new_node = alloc_queue();
+  queue *new_node = malloc(sizeof(queue)); // Use malloc instead of alloc_queue
   if (!new_node) {
     puts("!!Error: Memory allocation failed");
     return;
@@ -138,10 +133,10 @@ page *pop_page(b_tree_buf *b) {
   if (DEBUG)
     puts("@Popped from queue");
 
+  head->page = NULL;
   free(head);
   return page;
 }
-
 page *queue_search(queue *q, u16 rrn) {
   if (!q) {
     if (DEBUG)
@@ -157,6 +152,7 @@ page *queue_search(queue *q, u16 rrn) {
     }
     temp = temp->next;
   }
+
   if (DEBUG)
     printf("@Page with RRN %hu not found in queue\n", rrn);
   return NULL;

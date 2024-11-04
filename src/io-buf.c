@@ -1,7 +1,8 @@
 #include "io-buf.h"
 #include "b-tree-buf.h"
+#include "free-rrn-list.h"
 
-io_buf *alloc_io_buf() {
+io_buf *alloc_io_buf(void) {
   io_buf *io = malloc(sizeof(io_buf));
   if (!io) {
     puts("!!Could not allocate IO_BUFFER");
@@ -32,7 +33,15 @@ io_buf *alloc_io_buf() {
   return io;
 }
 
-void d_insert(io_buf *io, data_record *d, u16 rrn) {}
+void d_insert(io_buf *io, data_record *d, free_rrn_list *ld, u16 rrn) {
+  if (!io || !d || !ld) {
+    puts("!!Error: NULL parameters on d_insert");
+  }
+  if (rrn == (u16)-1)
+    rrn = get_free_rrn(ld);
+
+  write_data_record(io, d, rrn);
+}
 
 void load_data_header(io_buf *io) {
   if (!io || !io->fp) {

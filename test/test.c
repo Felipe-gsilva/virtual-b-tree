@@ -1,9 +1,9 @@
 #include "test.h"
 
-#include "b-tree-buf.h"
-#include "free-rrn-list.h"
-#include "io-buf.h"
-#include "queue.h"
+#include "../src/b-tree-buf.h"
+#include "../src/free-rrn-list.h"
+#include "../src/io-buf.h"
+#include "../src/queue.h"
 
 void test_queue_search(void) {
   b_tree_buf *b = alloc_tree_buf();
