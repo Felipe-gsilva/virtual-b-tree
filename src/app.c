@@ -149,6 +149,8 @@ app *alloc_app(void) {
 }
 
 void clear_app(app *app) {
+  if (!DEBUG)
+    puts("See you soon!!");
   if (app->idx) {
     clear_io_buf(app->idx);
     app->idx = NULL;
@@ -206,16 +208,19 @@ int main(int argc, char **argv) {
   if (ftell(a->b->io->fp) <= a->b->io->br->header_size) {
     insert_list(a->b->i, 0);
     build_tree(a->b, a->data, n);
-    print_queue(a->b->q);
-    if (DEBUG)
+    if (DEBUG) {
+      print_queue(a->b->q);
       test_tree(a->b, a->data, n);
+    }
     insert_list(a->ld, n + 1);
+    a->b->io->br->root_rrn = a->b->root->rrn;
+    write_index_header(a->b->io);
   }
 
   cli(a);
 
-  //  if(DEBUG)
-  //    test_queue_search();
+  if (DEBUG)
+    test_queue_search();
   clear_app(a);
   return 0;
 }

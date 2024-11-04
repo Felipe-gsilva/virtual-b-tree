@@ -58,8 +58,9 @@ void load_data_header(io_buf *io) {
     return;
   }
 
-  printf("Header_size: %hu \t Record size: %hu\n", temp_hr.header_size,
-         temp_hr.record_size);
+  if (DEBUG)
+    printf("Header_size: %hu \t Record size: %hu\n", temp_hr.header_size,
+           temp_hr.record_size);
 
   if (!io->hr) {
     io->hr = malloc(sizeof(data_header_record));
@@ -127,8 +128,9 @@ data_record *load_data_record(io_buf *io, u16 rrn) {
   }
 
   int byte_offset = io->hr->header_size + (io->hr->record_size * rrn);
-  printf("Header size: %d, Record size: %d, RRN: %d, byte_offset: %d\n",
-         io->hr->header_size, io->hr->record_size, rrn, byte_offset);
+  if (DEBUG)
+    printf("Header size: %d, Record size: %d, RRN: %d, byte_offset: %d\n",
+           io->hr->header_size, io->hr->record_size, rrn, byte_offset);
 
   if (fseek(io->fp, byte_offset, SEEK_SET) != 0) {
     puts("!!Error seeking to byte offset");
@@ -249,7 +251,8 @@ void load_file(io_buf *io, char *file_name, const char *type) {
   }
 
   if (io->fp != NULL) {
-    puts("--> buffer already filled\n--> closing logical link\n");
+    if (DEBUG)
+      puts("--> buffer already filled\n--> closing logical link\n");
     if (fclose(io->fp) != 0) {
       puts("!!ERROR: failed to close file");
       return;
@@ -329,10 +332,12 @@ void create_data_file(io_buf *io, char *file_name) {
   if (dot)
     strcpy(dot, ".hlp");
 
-  printf("Loading File: %s\n", io->address);
+  if (DEBUG)
+    printf("@Loading File: %s\n", io->address);
   io->fp = fopen(io->address, "r+b");
   if (!io->fp) {
-    printf("!!Error opening file: %s. Creating it...\n", io->address);
+    if (DEBUG)
+      printf("!!Error opening file: %s. Creating it...\n", io->address);
     io->fp = fopen(io->address, "wb");
     if (!io->fp) {
       puts("!!Error creating file");

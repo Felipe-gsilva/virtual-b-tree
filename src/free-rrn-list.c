@@ -170,7 +170,8 @@ void load_list(free_rrn_list *i, char *s) {
   }
 
   fflush(i->io->fp);
-  printf("@Loaded RRN list with %d entries\n", i->n);
+  if(DEBUG)
+    printf("@Loaded RRN list with %d entries\n", i->n);
 }
 
 u16 *load_rrn_list(free_rrn_list *i) {
@@ -269,9 +270,11 @@ void insert_list(free_rrn_list *i, int rrn) {
     return;
   }
 
-  printf("Current count before insertion: %d\n", i->n);
+  if(DEBUG)
+    printf("Current count before insertion: %d\n", i->n);
   if (rrn_exists(i->free_rrn, i->n, rrn)) {
-    printf("@RRN %d already exists in the list\n", rrn);
+    if(DEBUG)
+      printf("@RRN %d already exists in the list\n", rrn);
     return;
   }
 
@@ -283,17 +286,17 @@ void insert_list(free_rrn_list *i, int rrn) {
 
   i->free_rrn = new_list;
   i->free_rrn[i->n++] = rrn;
-  printf("New count after insertion: %d\n", i->n);
+  if (DEBUG)
+    printf("New count after insertion: %d\n", i->n);
 
   sort_list(i->free_rrn, i->n);
   write_rrn_list_to_file(i);
 
-  printf("List after insertion:\n");
-  for (int j = 0; j < i->n; j++)
-    printf("%hu ", i->free_rrn[j]);
-  puts("");
-
   if (DEBUG) {
+    printf("List after insertion:\n");
+    for (int j = 0; j < i->n; j++)
+      printf("%hu ", i->free_rrn[j]);
+    puts("");
     printf("@RRN %d added and list sorted. New list:\n", rrn);
     for (int j = 0; j < i->n; j++)
       printf("%d ", i->free_rrn[j]);

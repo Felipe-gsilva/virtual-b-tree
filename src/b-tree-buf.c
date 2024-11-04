@@ -116,9 +116,11 @@ page *load_page(b_tree_buf *b, u16 rrn) {
   page *page;
   page = queue_search(b->q, rrn);
   if (page != NULL) {
-    if (DEBUG)
+    if (DEBUG) {
+
       puts("@Page found on queue");
-    print_page(page);
+      print_page(page);
+    }
     return page;
   }
 
@@ -133,7 +135,8 @@ page *load_page(b_tree_buf *b, u16 rrn) {
   }
 
   if (fread(page, b->io->br->page_size, 1, b->io->fp) != 1) {
-    puts("!!Error: could not read page");
+    if (DEBUG)
+      puts("!!Error: could not read page");
     return NULL;
   }
 
@@ -150,18 +153,11 @@ int write_root_rrn(b_tree_buf *b, u16 rrn) {
     puts("!!Error: NULL b_tree_buf");
     return BTREE_ERROR_IO;
   }
-  if (b->root->rrn == rrn) {
-    puts("@RRN already refers to root");
-    return BTREE_SUCCESS;
-  }
 
-  page *temp = load_page(b, rrn);
-  if (!temp) {
-    puts("!!Error: page to be inserted do not exists");
-    return BTREE_ERROR_INVALID_PAGE;
-  }
+  b->io->br->root_rrn = rrn;
+
   fseek(b->io->fp, 0, SEEK_SET);
-  size_t flag = fwrite(&temp->rrn, sizeof(u16), 1, b->io->fp);
+  size_t flag = fwrite(&rrn, sizeof(u16), 1, b->io->fp);
   if (flag != 1) {
     puts("!!Error: Could not update root rrn");
     exit(-1);
@@ -169,7 +165,6 @@ int write_root_rrn(b_tree_buf *b, u16 rrn) {
 
   fflush(b->io->fp);
 
-  b->io->br->root_rrn = rrn;
   return BTREE_SUCCESS;
 }
 
@@ -205,7 +200,8 @@ int search_in_page(page *p, key key, int *return_pos) {
       return BTREE_NOT_FOUND_KEY;
     }
 
-    printf("page key id: %s\t key id: %s\n", p->keys[i].id, key.id);
+    if (DEBUG)
+      printf("page key id: %s\t key id: %s\n", p->keys[i].id, key.id);
     if (strcmp(p->keys[i].id, key.id) == 0) {
       puts("@Curr key was found");
       *return_pos = i;
@@ -214,7 +210,8 @@ int search_in_page(page *p, key key, int *return_pos) {
 
     if (strcmp(p->keys[i].id, key.id) > 0) {
       *return_pos = i;
-      puts("@Curr key is greater than the new one");
+      if (DEBUG)
+        puts("@Curr key is greater than the new one");
       return BTREE_NOT_FOUND_KEY;
     }
   }
@@ -755,7 +752,8 @@ void create_index_file(io_buf *io, const char *file_name) {
   printf("Loading file: %s\n", io->address);
   io->fp = fopen(io->address, "r+b");
   if (!io->fp) {
-    printf("!!Error opening file: %s. Creating it...\n", io->address);
+    if (DEBUG)
+      printf("!!Error opening file: %s. Creating it...\n", io->address);
     io->fp = fopen(io->address, "wb");
     if (io->fp) {
       fclose(io->fp);
@@ -774,10 +772,13 @@ void create_index_file(io_buf *io, const char *file_name) {
     strcpy(dot, ".hlp");
   }
 
-  strcpy(io->br->free_rrn_address, list_name);
+  load_index_header(io);
 
-  populate_index_header(io->br, io->br->free_rrn_address);
-  write_index_header(io);
+  if (strcmp(io->br->free_rrn_address, list_name) != 0) {
+    strcpy(io->br->free_rrn_address, list_name);
+    populate_index_header(io->br, list_name);
+    write_index_header(io);
+  }
 
   if (DEBUG) {
     puts("@Index file created successfully");

@@ -6,7 +6,7 @@
 
 on pages
 - [x] page search
-- [ ] page insert
+- [x] page insert
 - [ ] page remove
 - [ ] page update
 
