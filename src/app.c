@@ -68,7 +68,7 @@ void cli(app *a) {
     printf("2. Insert\n");
     printf("3. Remove -- not working yet\n");
     if(DEBUG)
-      printf("5. Print root -- DEBUG\n");
+      printf("4. Print root -- DEBUG\n");
 
     printf("Enter your choice: ");
     scanf("%d", &choice);
@@ -114,8 +114,9 @@ void cli(app *a) {
       get_id(0, placa);
       b_remove(a->b, a->data, placa);
       break;
-    case 5:
-      print_page(a->b->root);
+    case 4:
+      if(DEBUG)
+          print_page(a->b->root);
       break;
     default:
       printf("Invalid choice.\n");
